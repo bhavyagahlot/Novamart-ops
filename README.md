@@ -1,150 +1,131 @@
-# NovaMart Ops
+# NovaMart Ops ⚡
 
-Autonomous multi-agent customer operations platform for a modern online electronics store, governed and monitored via the **Synapse OS** control plane.
-
-Built with **FastAPI**, **SQLite**, and **Google Gemini 1.5 Flash**, styled after the **Synapse OS** design system (*Instrument Serif*, *Inter*, *Fragment Mono*, `#3455fa` primary accent, and clean 12px rounded panels).
+An autonomous customer operations system for an online electronics retailer, driven by a 4-agent AI pipeline and monitored in real-time by the external [Synapse OS](https://synapse.example.com) platform via an HTTP SDK.
 
 ---
 
-## Architecture & Autonomous Agents
+## 🌟 Overview & Architecture
 
-NovaMart Ops orchestrates customer operations across 4 specialized AI agents:
+NovaMart Ops coordinates four specialized AI agents using FastAPI, SQLite, and Google Gemini:
 
-1. **Triage Agent**: Inspects incoming customer intent and routes execution to Order, Pricing, or Billing agents. Inquiries regarding return policies, shipping times, or device warranties are answered directly via the embedded store policy knowledge base.
-2. **Order Agent**: Parses item selections and quantities, verifies real-time stock levels in SQLite, decrements inventory upon fulfillment, and generates an order confirmation with transaction ID.
-3. **Pricing Agent**: Reviews promotional and custom discount requests against the safety limit (`DISCOUNT_APPROVAL_LIMIT_PERCENT = 15%`). Inquiries above 15% are marked as `WAITING_APPROVAL` and escalated to human supervision.
-4. **Billing Agent**: Evaluates returns, cancellations, and refunds against the spending limit (`REFUND_APPROVAL_LIMIT = $100`). Claims exceeding $100 are marked as `WAITING_APPROVAL` for human supervisor review.
+1. **Triage Agent**: Reads customer inquiries, extracts intent, answers store policy & warranty FAQs directly, or routes orders, discounts, and refunds to the specialist agent.
+2. **Order Agent**: Inspects real-time inventory in SQLite (`NovaBook Pro`, `NovaPhone Ultra`, `NovaSound Headphones`, etc.), creates verified purchase orders, and automatically decrements stock.
+3. **Pricing Agent**: Evaluates discount promo inquiries against business rules. Requests up to 15% are approved instantly. Requests over 15% are escalated to `WAITING_APPROVAL`.
+4. **Billing Agent**: Evaluates refund requests. Refunds up to $100 are automatically refunded. Refunds over $100 are escalated to `WAITING_APPROVAL` for manager authorization.
 
-Every agent invocation records:
-- **Agent Name & Lifecycle Status** (`PROCESSING`, `COMPLETED`, `WAITING_APPROVAL`, `ERROR`)
-- **Token Usage** (Prompt & Candidate tokens)
-- **Estimated Cost in USD** (Gemini 1.5 Flash per-token pricing)
-- **Latency (ms)**
-- **Audit Steps** (persisted in SQLite and synced to Synapse)
-
----
-
-## Synapse OS Integration
-
-NovaMart Ops includes a lightweight Python SDK (`app/synapse_client.py`) that syncs all agent runs and reasoning steps to your external Synapse control platform over HTTP.
-
-Configured endpoints:
-```python
-SYNAPSE_ENDPOINT_START_RUN    = "/api/v1/projects/{project_id}/runs"
-SYNAPSE_ENDPOINT_RECORD_STEP  = "/api/v1/projects/{project_id}/runs/{run_id}/steps"
-SYNAPSE_ENDPOINT_FINISH_RUN   = "/api/v1/projects/{project_id}/runs/{run_id}/finish"
-SYNAPSE_ENDPOINT_GET_APPROVAL = "/api/v1/projects/{project_id}/runs/{run_id}/approval"
-```
-
-*Resilience Note*: If the external Synapse server is unreachable, the SDK gracefully logs a warning and allows local store operations and customer conversations to proceed uninterrupted.
+Each agent run logs:
+- **Status Chip**: `PROCESSING` (blue), `COMPLETED` (green), `ERROR` (red), `WAITING_APPROVAL` (amber)
+- **Token Metrics**: Input tokens & output tokens
+- **Financial Cost**: USD estimation based on Gemini token pricing
+- **Latency**: Sub-second execution timing in milliseconds
+- **Execution Step Trace**: Micro-step timeline of internal reasoning and database updates
 
 ---
 
-## Getting Started
+## 🖥️ UI & Synapse OS Aesthetic
+
+The interface is accessible at `http://localhost:8000`:
+- **Left Column**: Customer interaction terminal, interactive customer name input, message box, and 4 one-click quick scenario tests.
+- **Right Column**: Live agent trace listing the triage agent and delegated specialist agent, metrics bar, and execution sequence.
+- **Approval Alerts**: Prominently warns the operator when a refund or discount exceeds threshold policy and is held in `WAITING_APPROVAL`.
+- **Styling**: Synapse OS design language:
+  - White background (`#ffffff`), soft panel backgrounds (`#f5f5f5`), 1px subtle borders (`#e8e8e8`).
+  - Google Fonts: **Instrument Serif** for editorial titles, **Inter** for clean UI controls, and **Fragment Mono** for telemetry, IDs, and financial costs.
+  - Primary color: `#3455fa`.
+
+---
+
+## 🚀 Quickstart & Setup
 
 ### 1. Prerequisites
-- Python 3.11+
+- Python 3.11 or newer
 - Git
 
-### 2. Setup Virtual Environment & Install Dependencies
+### 2. Installation
+Clone the repository and install dependencies:
+
 ```bash
-# Clone the repository
-git clone https://github.com/<your-username>/novamart-ops.git
+git clone https://github.com/Bhavyagahlot2007/novamart-ops.git
 cd novamart-ops
 
-# Create and activate virtual environment
+# Create virtual environment (optional but recommended)
 python -m venv venv
-
 # Windows:
 .\venv\Scripts\activate
-# macOS/Linux:
+# Linux/macOS:
 source venv/bin/activate
 
 # Install requirements
 pip install -r requirements.txt
 ```
 
-### 3. Environment Variables
-Copy `.env.example` to `.env`:
+### 3. Configuration
+Copy the sample environment file:
+
 ```bash
+# Windows
+copy .env.example .env
+
+# Linux/macOS
 cp .env.example .env
 ```
 
-Edit `.env` with your credentials:
+Open `.env` and fill in your keys (the application works with built-in fallbacks if you don't have active keys yet):
+
 ```env
-# Gemini API Configuration
 GEMINI_API_KEY=your_gemini_api_key_here
 GEMINI_MODEL=gemini-1.5-flash
-
-# Synapse Platform Monitoring Configuration
-SYNAPSE_URL=http://localhost:9000
-SYNAPSE_API_KEY=your_synapse_api_key_here
-SYNAPSE_PROJECT_ID=novamart-ops
-
-# Store Policy Limits
+SYNAPSE_URL=https://api.synapse.example.com
+SYNAPSE_API_KEY=syn_demo_key_123456789
+SYNAPSE_PROJECT_ID=novamart-ops-proj-001
 REFUND_APPROVAL_LIMIT=100
 DISCOUNT_APPROVAL_LIMIT_PERCENT=15
 ```
 
-> **Note**: If `GEMINI_API_KEY` is not provided, NovaMart Ops automatically engages intelligent local heuristic reasoning, allowing you to test all flows and UI features out of the box.
+### 4. Running the Application
+Start the FastAPI server:
 
-### 4. Run the Application
 ```bash
 uvicorn app.main:app --reload --port 8000
 ```
-Open your browser at **[http://localhost:8000](http://localhost:8000)**.
+
+Open your browser to:
+👉 **[http://localhost:8000](http://localhost:8000)**
 
 ---
 
-## Quick-Test Workflows
+## 🧪 Testing Quick Scenarios
 
-The web UI contains 4 interactive one-click test actions:
+Use the 4 buttons on the dashboard to test the agents:
 
-| Quick Action | Intent Routed | Outcome |
-|---|---|---|
-| **💻 Order a laptop** | `Order Agent` | Confirms order for *NovaBook Pro 16*, updates SQLite stock, status `COMPLETED` (green chip). |
-| **🏷️ Ask for 30% off** | `Pricing Agent` | Exceeds 15% threshold; flags status `WAITING_APPROVAL` (amber chip) and shows Synapse manager banner. |
-| **💸 Refund an expensive order** | `Billing Agent` | Exceeds $100 threshold ($1,299.99); flags status `WAITING_APPROVAL` (amber chip). |
-| **❓ Ask a policy question** | `Triage Agent` | Answered directly from store policy without secondary dispatch; status `COMPLETED` (green chip). |
+1. **"Order a laptop"**
+   - Routes: `Triage Agent` ➔ `Order Agent`
+   - Outcome: Checks inventory for NovaBook Pro 16, creates Order #1004, decrements stock.
+   - Status: `COMPLETED`
+2. **"Ask for 30% off"**
+   - Routes: `Triage Agent` ➔ `Pricing Agent`
+   - Outcome: 30% > 15% limit. Agent denies instant approval.
+   - Status: `WAITING_APPROVAL` (Amber notice shown to customer)
+3. **"Refund an expensive order"**
+   - Routes: `Triage Agent` ➔ `Billing Agent`
+   - Outcome: Refund amount ($1,299.99) > $100 limit.
+   - Status: `WAITING_APPROVAL` (Amber approval alert banner shown)
+4. **"Ask a policy question"**
+   - Routes: `Triage Agent` (direct answer)
+   - Outcome: Answers 30-day return policy and 1-year warranty directly without delegating.
+   - Status: `COMPLETED`
 
 ---
 
-## Running the Automated Test Suite
+## 📡 Synapse Platform Integration
 
-Run the unit tests:
-```bash
-python tests/test_agents.py
-python tests/test_api.py
+The `app/synapse_client.py` SDK reports run telemetry to your Synapse OS instance over HTTP.
+
+Configurable constants located in `app/synapse_client.py`:
+```python
+SYNAPSE_RUNS_ENDPOINT = "/api/v1/runs"
+SYNAPSE_STEPS_ENDPOINT = "/api/v1/runs/{run_id}/steps"
+SYNAPSE_APPROVAL_ENDPOINT = "/api/v1/runs/{run_id}/approval"
 ```
 
----
-
-## Project Structure
-```text
-novamart-ops/
-├── app/
-│   ├── __init__.py
-│   ├── config.py             # Pydantic settings loading from .env
-│   ├── database.py           # SQLite connection, schemas & seed catalog
-│   ├── synapse_client.py     # Synapse OS SDK with endpoint constants & fallback
-│   ├── agents/
-│   │   ├── __init__.py
-│   │   ├── gemini_helper.py  # Gemini API calls, token counts & USD cost estimator
-│   │   ├── triage_agent.py   # Intent routing (Order, Pricing, Billing, FAQ)
-│   │   ├── order_agent.py    # Inventory check and order placement in SQLite
-│   │   ├── pricing_agent.py  # Discount approval evaluator (threshold: 15%)
-│   │   ├── billing_agent.py  # Refund approval evaluator (threshold: $100)
-│   │   └── orchestrator.py   # Pipeline runner, trace collector & Synapse sync
-│   └── main.py               # FastAPI application & API routes
-├── static/
-│   ├── index.html            # Synapse-styled two-panel dashboard
-│   ├── styles.css            # Clean minimal styling, status chips & fonts
-│   └── app.js                # Chat submission, trace rendering & stock updates
-├── tests/
-│   ├── test_agents.py        # Multi-agent flow verification
-│   └── test_api.py           # FastAPI endpoints & static file tests
-├── .env.example              # Committed config template with placeholders
-├── .gitignore                # Excludes .env, *.db, venv, and __pycache__
-├── requirements.txt          # Python dependencies
-└── README.md                 # Documentation
-```
+If Synapse is offline or unreachable, NovaMart Ops safely logs a warning and continues processing customer requests seamlessly without disruption.

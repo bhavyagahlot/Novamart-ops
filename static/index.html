@@ -3,169 +3,131 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NovaMart Ops — Multi-Agent Electronics Storefront</title>
-  
-  <!-- Google Fonts: Inter, Instrument Serif, Fragment Mono -->
+  <title>NovaMart Ops — Multi-Agent Customer Operations</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:ital@0;1&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
-  <link rel="stylesheet" href="/static/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:ital,wght@0,400;0,500;1,400&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <!-- Global Top Header -->
+  <!-- Header -->
   <header class="app-header">
     <div class="header-left">
-      <div class="brand-logo">
-        <span class="logo-dot"></span>
+      <div class="brand-badge">
+        <span class="brand-dot"></span>
         <span class="brand-title">NovaMart Ops</span>
       </div>
-      <span class="header-pill">Autonomous Ops</span>
-      <span class="header-pill outline" id="geminiModelPill">gemini-1.5-flash</span>
+      <span class="header-tag">Autonomous Multi-Agent Retail System</span>
     </div>
-
     <div class="header-right">
-      <a href="#" id="synapseDashboardLink" target="_blank" class="synapse-link" title="Open Synapse OS Management Console">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
-          <path d="M2 12h20"></path>
-        </svg>
-        <span>Open Synapse Dashboard</span>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M7 17l9.2-9.2M17 17V7H7"></path>
-        </svg>
-      </a>
+      <div class="header-meta">
+        <span class="meta-label">Monitored by</span>
+        <a id="synapse-dashboard-link" href="https://api.synapse.example.com" target="_blank" rel="noopener noreferrer" class="synapse-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+          Synapse Dashboard
+        </a>
+      </div>
     </div>
   </header>
 
-  <!-- Main Grid Layout -->
-  <main class="main-container">
-    <div class="hero-strip">
-      <h1 class="page-headline">Store Operations Console</h1>
-      <p class="page-subline">Four autonomous agents triage inquiries, fulfill orders, review discounts, and evaluate refunds under Synapse policy governance.</p>
-    </div>
+  <!-- Main Container -->
+  <main class="main-layout">
+    <!-- Left Column: Customer Console -->
+    <section class="panel console-panel">
+      <div class="panel-header">
+        <h1 class="panel-title">Customer Operations</h1>
+        <p class="panel-subtitle">Interact with NovaMart's automated customer service agents.</p>
+      </div>
 
-    <div class="content-grid">
-      <!-- LEFT PANEL: Customer Chat & Quick Actions -->
-      <section class="panel chat-panel">
-        <div class="panel-header">
-          <h2 class="panel-title">Customer Storefront</h2>
-          <span class="panel-subtitle">Interactive customer inquiry simulator</span>
+      <!-- Quick Test Buttons -->
+      <div class="quick-tests-container">
+        <div class="section-label">Quick Scenarios</div>
+        <div class="quick-buttons-grid">
+          <button type="button" class="btn-quick" data-text="Order a laptop">
+            <span class="quick-icon">💻</span>
+            <span>Order a laptop</span>
+          </button>
+          <button type="button" class="btn-quick" data-text="Ask for 30% off">
+            <span class="quick-icon">🏷️</span>
+            <span>Ask for 30% off</span>
+          </button>
+          <button type="button" class="btn-quick" data-text="Refund an expensive order">
+            <span class="quick-icon">💸</span>
+            <span>Refund an expensive order</span>
+          </button>
+          <button type="button" class="btn-quick" data-text="What is your return and warranty policy?">
+            <span class="quick-icon">📋</span>
+            <span>Ask a policy question</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Customer Input Form -->
+      <form id="chat-form" class="chat-form">
+        <div class="form-row">
+          <label for="customer-name" class="input-label">Customer Name</label>
+          <input type="text" id="customer-name" class="text-input" value="Alex Rivera" placeholder="e.g. Alex Rivera" required>
         </div>
 
-        <div class="quick-actions-bar">
-          <span class="quick-label">Quick Actions:</span>
-          <div class="quick-buttons">
-            <button class="quick-btn" data-query="I'd like to order a laptop, please.">
-              <span>💻</span> Order a laptop
-            </button>
-            <button class="quick-btn" data-query="Can I please get a 30% discount on my order?">
-              <span>🏷️</span> Ask for 30% off
-            </button>
-            <button class="quick-btn" data-query="I need to refund an expensive order of $1,299.99 for a laptop.">
-              <span>💸</span> Refund an expensive order
-            </button>
-            <button class="quick-btn" data-query="What is your return policy and warranty on electronics?">
-              <span>❓</span> Ask a policy question
-            </button>
-          </div>
+        <div class="form-row">
+          <label for="customer-message" class="input-label">Customer Message</label>
+          <textarea id="customer-message" class="text-area" rows="3" placeholder="Type your order, refund, discount, or policy question..." required>Order a laptop</textarea>
         </div>
 
-        <form id="chatForm" class="chat-form">
-          <div class="input-row">
-            <label for="customerName" class="field-label">Customer Name</label>
-            <input type="text" id="customerName" class="text-input" value="Alex Mercer" placeholder="e.g. Jordan Lee" required>
-          </div>
+        <button type="submit" id="btn-submit" class="btn-primary">
+          <span class="btn-text">Send Message</span>
+          <span class="btn-spinner" style="display:none;"></span>
+        </button>
+      </form>
 
-          <div class="input-row">
-            <label for="customerMessage" class="field-label">Message</label>
-            <textarea id="customerMessage" class="textarea-input" rows="3" placeholder="Type an order request, discount inquiry, refund, or store question..." required></textarea>
+      <!-- Customer Reply Section -->
+      <div class="customer-reply-card" id="reply-container">
+        <div class="reply-header">
+          <div class="reply-title-row">
+            <span class="reply-icon">💬</span>
+            <span class="reply-title">Customer Reply</span>
           </div>
-
-          <div class="form-footer">
-            <div class="policy-reminder mono-text">Limits: Auto-Discount ≤ 15% | Auto-Refund ≤ $100</div>
-            <button type="submit" id="sendBtn" class="btn-primary">
-              <span id="btnText">Send Inquiry</span>
-              <span id="btnSpinner" class="spinner" style="display: none;"></span>
-            </button>
-          </div>
-        </form>
-
-        <!-- Customer Reply Box -->
-        <div class="reply-container" id="replyContainer">
-          <div class="reply-header">
-            <span class="reply-title">Store Response to Customer</span>
-            <span class="chip chip-completed" id="replyStatusChip">Ready</span>
-          </div>
-
-          <!-- Human Approval Banner (Shown conditionally) -->
-          <div class="approval-banner" id="approvalBanner" style="display: none;">
-            <div class="approval-icon">⚠️</div>
-            <div class="approval-content">
-              <div class="approval-title">WAITING FOR HUMAN APPROVAL</div>
-              <div class="approval-desc" id="approvalText">This transaction exceeds automated safety policy limits and has been escalated to Synapse for manager approval.</div>
-            </div>
-          </div>
-
-          <div class="reply-body" id="replyBody">
-            <p class="placeholder-text">Submit an inquiry or click a quick action above to see the multi-agent response.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- RIGHT PANEL: Live Multi-Agent Execution Trace -->
-      <section class="panel trace-panel">
-        <div class="panel-header">
-          <div class="trace-header-titles">
-            <h2 class="panel-title">Live Agent Trace</h2>
-            <span class="panel-subtitle">Step-by-step reasoning, routing & Synapse audit logs</span>
-          </div>
-          <div class="trace-meta-id mono-text" id="traceRunId">Run: Idle</div>
+          <span id="reply-time" class="mono-meta">Ready</span>
         </div>
 
-        <!-- Agent Execution Pipeline Summary -->
-        <div class="agents-ran-strip" id="agentsRanStrip">
-          <div class="empty-trace-note">Awaiting message execution...</div>
-        </div>
-
-        <!-- Aggregated Metrics Card -->
-        <div class="metrics-grid" id="metricsGrid" style="display: none;">
-          <div class="metric-card">
-            <div class="metric-label">Input Tokens</div>
-            <div class="metric-val mono-text" id="metricInTokens">0</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Output Tokens</div>
-            <div class="metric-val mono-text" id="metricOutTokens">0</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Est. Cost (USD)</div>
-            <div class="metric-val mono-text" id="metricCost">$0.000000</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Total Latency</div>
-            <div class="metric-val mono-text" id="metricLatency">0 ms</div>
+        <!-- Approval Alert Banner -->
+        <div id="approval-banner" class="approval-alert" style="display:none;">
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-body">
+            <div class="alert-title">WAITING FOR HUMAN APPROVAL</div>
+            <div id="approval-notice-text" class="alert-text"></div>
           </div>
         </div>
 
-        <!-- Detailed Execution Steps -->
-        <div class="steps-container">
-          <div class="steps-title">Agent Execution Steps</div>
-          <div class="steps-list" id="stepsList">
-            <div class="empty-steps">Steps will stream here once an inquiry is sent.</div>
-          </div>
+        <div id="customer-reply-content" class="reply-body">
+          Welcome to NovaMart Ops! Select a quick-test scenario above or type a message to execute our autonomous agent workflows.
         </div>
+      </div>
+    </section>
 
-        <!-- Inventory Preview Footnote -->
-        <div class="inventory-footer">
-          <div class="inventory-title">Active Store Catalog (SQLite)</div>
-          <div class="inventory-chips" id="inventoryChips">
-            <span class="inv-chip mono-text">Loading catalog...</span>
-          </div>
+    <!-- Right Column: Live Agent Trace & Synapse Monitor -->
+    <section class="panel trace-panel">
+      <div class="panel-header trace-header-row">
+        <div>
+          <h2 class="panel-title">Live Agent Trace</h2>
+          <p class="panel-subtitle">Multi-agent execution sequence & Synapse telemetry.</p>
         </div>
-      </section>
-    </div>
+        <div class="trace-totals mono-meta" id="trace-summary">
+          <span>0 tokens</span>
+          <span class="dot-separator">•</span>
+          <span>$0.000000</span>
+        </div>
+      </div>
+
+      <!-- Agent Chain Container -->
+      <div id="agent-chain-list" class="agent-chain">
+        <div class="empty-trace-state">
+          <div class="empty-icon">⚡</div>
+          <div class="empty-title">Awaiting Execution</div>
+          <div class="empty-desc">Send a message or click a quick-test button to inspect agent triage, stock validation, and policy checks in real-time.</div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <script src="/static/app.js"></script>

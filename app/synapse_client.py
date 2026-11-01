@@ -1,163 +1,150 @@
+"""Synapse HTTP Client SDK for NovaMart Ops
+
+This client communicates with the external Synapse OS / monitoring platform.
+It reports agent run lifecycle events (start, steps, end/metrics) and checks
+for human approval decisions on runs in WAITING_APPROVAL status.
+Includes circuit-breaker backoff so unreachable Synapse endpoints don't degrade latency.
+"""
+
+import time
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List, Optional
 import httpx
 from app.config import settings
 
 logger = logging.getLogger("novamart.synapse")
 
 # ==============================================================================
-# Synapse API Endpoints (Configurable Constants)
-# TODO: Update or confirm these Synapse endpoints with your Synapse platform specification.
+# Synapse API Endpoints Configuration
+# TODO: Confirm or customize the exact Synapse API endpoints below with your
+# Synapse platform deployment specifications.
 # ==============================================================================
-SYNAPSE_ENDPOINT_START_RUN    = "/api/v1/projects/{project_id}/runs"
-SYNAPSE_ENDPOINT_RECORD_STEP  = "/api/v1/projects/{project_id}/runs/{run_id}/steps"
-SYNAPSE_ENDPOINT_FINISH_RUN   = "/api/v1/projects/{project_id}/runs/{run_id}/finish"
-SYNAPSE_ENDPOINT_GET_APPROVAL = "/api/v1/projects/{project_id}/runs/{run_id}/approval"
-# ==============================================================================
+SYNAPSE_RUNS_ENDPOINT = "/api/v1/runs"
+SYNAPSE_STEPS_ENDPOINT = "/api/v1/runs/{run_id}/steps"
+SYNAPSE_APPROVAL_ENDPOINT = "/api/v1/runs/{run_id}/approval"
+
 
 class SynapseClient:
-    """
-    Python SDK client for reporting agent operations and approval status
-    to the external Synapse OS control plane.
-    """
-
     def __init__(
         self,
         base_url: Optional[str] = None,
         api_key: Optional[str] = None,
-        project_id: Optional[str] = None,
-        timeout: float = 0.5
+        project_id: Optional[str] = None
     ):
-        self.base_url = (base_url or settings.SYNAPSE_URL or "").rstrip("/")
-        self.api_key = api_key or settings.SYNAPSE_API_KEY or ""
-        self.project_id = project_id or settings.SYNAPSE_PROJECT_ID or "novamart-ops"
-        self.timeout = timeout
-        self._synapse_offline = False
-
-    @property
-    def headers(self) -> Dict[str, str]:
-        headers = {
+        self.base_url = (base_url or settings.SYNAPSE_URL).rstrip("/")
+        self.api_key = api_key or settings.SYNAPSE_API_KEY
+        self.project_id = project_id or settings.SYNAPSE_PROJECT_ID
+        self.timeout = httpx.Timeout(connect=0.5, read=1.0, write=1.0, pool=0.5)
+        self.headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "X-Project-ID": self.project_id,
             "Content-Type": "application/json",
-            "User-Agent": "NovaMartOps-SynapseClient/1.0"
+            "User-Agent": "NovaMart-Ops/1.0.0"
         }
-        if self.api_key:
-            headers["Authorization"] = f"Bearer {self.api_key}"
-            headers["X-Synapse-Api-Key"] = self.api_key
-        return headers
+        # Circuit-breaker state
+        self._is_reachable: bool = True
+        self._last_failure_time: float = 0.0
+        self._backoff_seconds: float = 30.0
 
-    def is_configured(self) -> bool:
-        return bool(self.base_url)
+    def _should_attempt_call(self) -> bool:
+        if not self._is_reachable:
+            if time.time() - self._last_failure_time > self._backoff_seconds:
+                # Retry after backoff period
+                self._is_reachable = True
+                return True
+            return False
+        return True
 
-    def _safe_post(self, path: str, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        if not self.is_configured():
-            logger.debug("Synapse URL not configured; skipping sync.")
+    def _mark_failure(self, url: str, reason: str):
+        if self._is_reachable:
+            logger.warning(
+                f"[Synapse Unreachable] Could not communicate with Synapse at {url}. "
+                f"Reason: {reason}. Switching to offline fallback mode for {self._backoff_seconds}s."
+            )
+        self._is_reachable = False
+        self._last_failure_time = time.time()
+
+    def _safe_request(self, method: str, path: str, json_data: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+        """Executes HTTP request to Synapse with graceful fallback and warning logs if unreachable."""
+        if not self._should_attempt_call():
             return None
-        if self._synapse_offline:
-            logger.debug("Synapse marked offline; skipping request.")
-            return None
+
         url = f"{self.base_url}{path}"
         try:
             with httpx.Client(timeout=self.timeout) as client:
-                resp = client.post(url, json=payload, headers=self.headers)
-                if resp.status_code in (200, 201, 202):
-                    return resp.json() if resp.text else {"status": "ok"}
-                logger.warning(
-                    f"Synapse responded with HTTP {resp.status_code} for POST {url}: {resp.text[:120]}"
+                response = client.request(
+                    method=method,
+                    url=url,
+                    headers=self.headers,
+                    json=json_data
                 )
-        except Exception as exc:
-            self._synapse_offline = True
-            logger.warning(f"Could not reach Synapse platform at {url}: {exc}. Marking Synapse offline for this session.")
-        return None
-
-    def _safe_get(self, path: str) -> Optional[Dict[str, Any]]:
-        if not self.is_configured() or self._synapse_offline:
+                if response.is_success:
+                    self._is_reachable = True
+                    try:
+                        return response.json()
+                    except Exception:
+                        return {"status": "ok"}
+                else:
+                    logger.warning(f"[Synapse] HTTP {response.status_code} from {url}: {response.text[:150]}")
+                    return None
+        except (httpx.ConnectError, httpx.TimeoutException, httpx.RequestError) as ex:
+            self._mark_failure(url, str(ex))
             return None
-        url = f"{self.base_url}{path}"
-        try:
-            with httpx.Client(timeout=self.timeout) as client:
-                resp = client.get(url, headers=self.headers)
-                if resp.status_code == 200:
-                    return resp.json()
-                logger.warning(f"Synapse responded with HTTP {resp.status_code} for GET {url}")
-        except Exception as exc:
-            self._synapse_offline = True
-            logger.warning(f"Could not reach Synapse platform at {url}: {exc}. Marking Synapse offline for this session.")
-        return None
+        except Exception as ex:
+            self._mark_failure(url, str(ex))
+            return None
 
-    def start_run(
-        self,
-        run_id: str,
-        agent_name: str,
-        customer_name: str,
-        user_message: str
-    ) -> bool:
-        """Report agent run start to Synapse."""
-        path = SYNAPSE_ENDPOINT_START_RUN.format(project_id=self.project_id)
+    def report_run_start(self, run_id: str, agent_name: str, conversation_id: str, metadata: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+        """Reports the initiation of an agent run."""
         payload = {
             "run_id": run_id,
             "project_id": self.project_id,
             "agent_name": agent_name,
-            "customer_name": customer_name,
-            "user_message": user_message,
-            "status": "PROCESSING"
+            "conversation_id": conversation_id,
+            "status": "PROCESSING",
+            "metadata": metadata or {}
         }
-        res = self._safe_post(path, payload)
-        return res is not None
+        return self._safe_request("POST", SYNAPSE_RUNS_ENDPOINT, payload)
 
-    def report_step(
-        self,
-        run_id: str,
-        agent_name: str,
-        step_number: int,
-        action: str,
-        detail: str
-    ) -> bool:
-        """Report a step in the agent reasoning/execution pipeline."""
-        path = SYNAPSE_ENDPOINT_RECORD_STEP.format(project_id=self.project_id, run_id=run_id)
+    def report_run_step(self, run_id: str, step_name: str, status: str = "COMPLETED", details: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+        """Reports an intermediate execution trace step for an agent."""
+        path = SYNAPSE_STEPS_ENDPOINT.format(run_id=run_id)
         payload = {
-            "run_id": run_id,
-            "step_number": step_number,
-            "agent_name": agent_name,
-            "action": action,
-            "detail": detail
+            "step_name": step_name,
+            "status": status,
+            "details": details or {}
         }
-        res = self._safe_post(path, payload)
-        return res is not None
+        return self._safe_request("POST", path, payload)
 
-    def finish_run(
+    def report_run_end(
         self,
         run_id: str,
-        agent_name: str,
         status: str,
         input_tokens: int,
         output_tokens: int,
         cost_usd: float,
         latency_ms: float,
-        reply_text: str,
-        approval_type: Optional[str] = None,
-        approval_amount: Optional[float] = None
-    ) -> bool:
-        """Report agent completion and metrics to Synapse."""
-        path = SYNAPSE_ENDPOINT_FINISH_RUN.format(project_id=self.project_id, run_id=run_id)
+        steps: List[Dict[str, Any]],
+        output_text: str
+    ) -> Optional[Dict[str, Any]]:
+        """Reports the completion (or waiting approval / error) of an agent run with metrics."""
+        path = f"{SYNAPSE_RUNS_ENDPOINT}/{run_id}"
         payload = {
-            "run_id": run_id,
-            "agent_name": agent_name,
             "status": status,
             "input_tokens": input_tokens,
             "output_tokens": output_tokens,
             "cost_usd": cost_usd,
             "latency_ms": latency_ms,
-            "reply_text": reply_text,
-            "approval_type": approval_type,
-            "approval_amount": approval_amount
+            "steps": steps,
+            "output_text": output_text
         }
-        res = self._safe_post(path, payload)
-        return res is not None
+        return self._safe_request("PATCH", path, payload)
 
     def check_approval(self, run_id: str) -> Optional[Dict[str, Any]]:
-        """Poll or check human approval decision for a WAITING_APPROVAL run."""
-        path = SYNAPSE_ENDPOINT_GET_APPROVAL.format(project_id=self.project_id, run_id=run_id)
-        return self._safe_get(path)
+        """Polls or checks Synapse for human approval decision on a WAITING_APPROVAL run."""
+        path = SYNAPSE_APPROVAL_ENDPOINT.format(run_id=run_id)
+        return self._safe_request("GET", path)
+
 
 # Global default client instance
 synapse_client = SynapseClient()

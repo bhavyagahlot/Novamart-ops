@@ -1,215 +1,194 @@
+/**
+ * NovaMart Ops - Frontend Orchestration
+ */
+
+let currentConversationId = null;
+
 document.addEventListener("DOMContentLoaded", () => {
-  const chatForm = document.getElementById("chatForm");
-  const customerNameInput = document.getElementById("customerName");
-  const customerMessageInput = document.getElementById("customerMessage");
-  const sendBtn = document.getElementById("sendBtn");
-  const btnText = document.getElementById("btnText");
-  const btnSpinner = document.getElementById("btnSpinner");
+  const form = document.getElementById("chat-form");
+  const nameInput = document.getElementById("customer-name");
+  const messageInput = document.getElementById("customer-message");
+  const submitBtn = document.getElementById("btn-submit");
+  const btnText = submitBtn.querySelector(".btn-text");
+  const btnSpinner = submitBtn.querySelector(".btn-spinner");
+  const replyContent = document.getElementById("customer-reply-content");
+  const replyTime = document.getElementById("reply-time");
+  const approvalBanner = document.getElementById("approval-banner");
+  const approvalNoticeText = document.getElementById("approval-notice-text");
+  const agentChainList = document.getElementById("agent-chain-list");
+  const traceSummary = document.getElementById("trace-summary");
+  const synapseDashboardLink = document.getElementById("synapse-dashboard-link");
 
-  // Output elements
-  const replyContainer = document.getElementById("replyContainer");
-  const replyBody = document.getElementById("replyBody");
-  const replyStatusChip = document.getElementById("replyStatusChip");
-  const approvalBanner = document.getElementById("approvalBanner");
-  const approvalText = document.getElementById("approvalText");
-
-  // Trace elements
-  const traceRunId = document.getElementById("traceRunId");
-  const agentsRanStrip = document.getElementById("agentsRanStrip");
-  const metricsGrid = document.getElementById("metricsGrid");
-  const metricInTokens = document.getElementById("metricInTokens");
-  const metricOutTokens = document.getElementById("metricOutTokens");
-  const metricCost = document.getElementById("metricCost");
-  const metricLatency = document.getElementById("metricLatency");
-  const stepsList = document.getElementById("stepsList");
-  const inventoryChips = document.getElementById("inventoryChips");
-
-  // Header elements
-  const synapseDashboardLink = document.getElementById("synapseDashboardLink");
-  const geminiModelPill = document.getElementById("geminiModelPill");
-
-  // 1. Fetch initial configuration & products
-  fetchConfig();
-  fetchProducts();
-
-  async function fetchConfig() {
-    try {
-      const res = await fetch("/api/config");
-      if (res.ok) {
-        const data = await res.json();
-        if (data.synapse_url) {
-          synapseDashboardLink.href = data.synapse_url;
-        }
-        if (data.gemini_model) {
-          geminiModelPill.textContent = data.gemini_model;
-        }
+  // Fetch initial public configuration
+  fetch("/api/config")
+    .then(res => res.json())
+    .then(config => {
+      if (config.synapse_url && synapseDashboardLink) {
+        synapseDashboardLink.href = config.synapse_url;
       }
-    } catch (err) {
-      console.warn("Could not load /api/config:", err);
-    }
-  }
+    })
+    .catch(err => console.warn("Could not load public config:", err));
 
-  async function fetchProducts() {
-    try {
-      const res = await fetch("/api/products");
-      if (res.ok) {
-        const data = await res.json();
-        renderProducts(data.products || []);
-      }
-    } catch (err) {
-      console.warn("Could not load products:", err);
-    }
-  }
-
-  function renderProducts(products) {
-    if (!products.length) {
-      inventoryChips.innerHTML = '<span class="inv-chip mono-text">No products in inventory</span>';
-      return;
-    }
-    inventoryChips.innerHTML = products.map(p => `
-      <span class="inv-chip mono-text" title="${p.description}">
-        ${p.name}: <strong>$${p.price.toFixed(2)}</strong> (${p.stock} in stock)
-      </span>
-    `).join("");
-  }
-
-  // 2. Quick Actions
-  document.querySelectorAll(".quick-btn").forEach(btn => {
+  // Quick-test buttons handler
+  const quickButtons = document.querySelectorAll(".btn-quick");
+  quickButtons.forEach(btn => {
     btn.addEventListener("click", () => {
-      const query = btn.getAttribute("data-query");
-      customerMessageInput.value = query;
-      submitInquiry();
+      const promptText = btn.getAttribute("data-text");
+      if (promptText) {
+        messageInput.value = promptText;
+        form.dispatchEvent(new Event("submit"));
+      }
     });
   });
 
-  // 3. Form Submit
-  chatForm.addEventListener("submit", (e) => {
+  // Form submit handler
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    submitInquiry();
-  });
 
-  async function submitInquiry() {
-    const customerName = customerNameInput.value.trim() || "Alex Mercer";
-    const message = customerMessageInput.value.trim();
+    const customerName = nameInput.value.trim() || "Alex Rivera";
+    const message = messageInput.value.trim();
+
     if (!message) return;
 
-    setLoading(true);
+    // UI Loading state
+    submitBtn.disabled = true;
+    btnText.textContent = "Dispatching Agents...";
+    btnSpinner.style.display = "inline-block";
 
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
           customer_name: customerName,
-          message: message
+          message: message,
+          conversation_id: currentConversationId
         })
       });
 
       if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.detail || "Server error processing message");
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      renderExecutionResult(data);
-      // Refresh inventory in case an order decremented stock
-      fetchProducts();
+      currentConversationId = data.conversation_id;
+
+      // Render Customer Reply
+      replyContent.textContent = data.reply;
+      const now = new Date();
+      replyTime.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+      // Render Approval Notice
+      if (data.requires_approval && data.approval_notice) {
+        approvalBanner.style.display = "flex";
+        approvalNoticeText.textContent = data.approval_notice;
+      } else {
+        approvalBanner.style.display = "none";
+      }
+
+      // Render Agent Execution Trace
+      renderAgentTrace(data.runs);
+
     } catch (err) {
-      console.error("Error executing inquiry:", err);
-      replyStatusChip.className = "chip chip-error";
-      replyStatusChip.textContent = "ERROR";
-      replyBody.innerHTML = `<span style="color: #dc2626;">Error: ${err.message}</span>`;
+      console.error("Chat dispatch error:", err);
+      replyContent.textContent = "Error executing multi-agent pipeline. Please ensure the server is running.";
       approvalBanner.style.display = "none";
     } finally {
-      setLoading(false);
-    }
-  }
-
-  function renderExecutionResult(data) {
-    // 1. Trace ID
-    traceRunId.textContent = `Run: ${data.run_id}`;
-
-    // 2. Reply & Status
-    replyBody.textContent = data.reply;
-    updateChip(replyStatusChip, data.status);
-
-    // 3. Approval Banner
-    if (data.status === "WAITING_APPROVAL" && data.approval_notice) {
-      approvalText.textContent = data.approval_notice;
-      approvalBanner.style.display = "flex";
-    } else {
-      approvalBanner.style.display = "none";
-    }
-
-    // 4. Agents Ran Strip (Triage first, then specialized agent)
-    if (data.agents_ran && data.agents_ran.length > 0) {
-      agentsRanStrip.innerHTML = data.agents_ran.map(agent => `
-        <div class="agent-row-card">
-          <div class="agent-info">
-            <span class="chip ${getChipClass(agent.status)}">${agent.status}</span>
-            <span class="agent-title">${agent.agent_name}</span>
-          </div>
-          <div class="agent-metrics-mini mono-text">
-            <span>In: ${agent.input_tokens}</span>
-            <span>Out: ${agent.output_tokens}</span>
-            <span>$${agent.cost_usd.toFixed(6)}</span>
-            <span>${agent.latency_ms.toFixed(0)}ms</span>
-          </div>
-        </div>
-      `).join("");
-    } else {
-      agentsRanStrip.innerHTML = '<div class="empty-trace-note">No agents registered.</div>';
-    }
-
-    // 5. Aggregated Metrics
-    metricsGrid.style.display = "grid";
-    metricInTokens.textContent = data.metrics.total_input_tokens;
-    metricOutTokens.textContent = data.metrics.total_output_tokens;
-    metricCost.textContent = `$${data.metrics.total_cost_usd.toFixed(6)}`;
-    metricLatency.textContent = `${data.metrics.total_latency_ms.toFixed(0)} ms`;
-
-    // 6. Detailed Steps
-    if (data.steps && data.steps.length > 0) {
-      stepsList.innerHTML = data.steps.map(s => `
-        <div class="step-item">
-          <div class="step-header">
-            <span class="step-num mono-text">#${s.step_number}</span>
-            <span class="step-agent">${s.agent_name}</span>
-            <span class="step-action mono-text">${s.action}</span>
-          </div>
-          <div class="step-detail">${s.detail}</div>
-        </div>
-      `).join("");
-    } else {
-      stepsList.innerHTML = '<div class="empty-steps">No steps recorded.</div>';
-    }
-  }
-
-  function getChipClass(status) {
-    switch (status) {
-      case "COMPLETED": return "chip-completed";
-      case "WAITING_APPROVAL": return "chip-waiting";
-      case "PROCESSING": return "chip-processing";
-      case "ERROR": return "chip-error";
-      default: return "chip-completed";
-    }
-  }
-
-  function updateChip(el, status) {
-    el.className = `chip ${getChipClass(status)}`;
-    el.textContent = status;
-  }
-
-  function setLoading(isLoading) {
-    sendBtn.disabled = isLoading;
-    if (isLoading) {
-      btnText.textContent = "Processing...";
-      btnSpinner.style.display = "inline-block";
-      replyStatusChip.className = "chip chip-processing";
-      replyStatusChip.textContent = "PROCESSING";
-    } else {
-      btnText.textContent = "Send Inquiry";
+      submitBtn.disabled = false;
+      btnText.textContent = "Send Message";
       btnSpinner.style.display = "none";
     }
+  });
+
+  function renderAgentTrace(runs) {
+    if (!runs || runs.length === 0) {
+      agentChainList.innerHTML = `
+        <div class="empty-trace-state">
+          <div class="empty-icon">⚡</div>
+          <div class="empty-title">No Runs Recorded</div>
+        </div>
+      `;
+      return;
+    }
+
+    let totalTokens = 0;
+    let totalCost = 0;
+
+    const cardsHtml = runs.map((run, index) => {
+      const inTok = run.input_tokens || 0;
+      const outTok = run.output_tokens || 0;
+      const runTokens = inTok + outTok;
+      const cost = run.cost_usd || 0;
+      const latency = run.latency_ms || 0;
+      const status = run.status || "COMPLETED";
+
+      totalTokens += runTokens;
+      totalCost += cost;
+
+      const stepsHtml = (run.steps || []).map(s => `
+        <div class="step-item">
+          <span class="step-bullet">›</span>
+          <span>${escapeHtml(s.step)}</span>
+          <span class="step-offset">${s.time_offset_ms ? s.time_offset_ms + 'ms' : ''}</span>
+        </div>
+      `).join("");
+
+      return `
+        <div class="agent-card">
+          <div class="agent-card-header">
+            <div class="agent-identity">
+              <span class="agent-index">0${index + 1}</span>
+              <span class="agent-name">${escapeHtml(run.agent_name)}</span>
+            </div>
+            <span class="chip chip-${status}">
+              ${status === "WAITING_APPROVAL" ? "⏳ WAITING_APPROVAL" : status}
+            </span>
+          </div>
+
+          <div class="agent-metrics">
+            <div class="metric-item">
+              <span>Tokens:</span>
+              <span class="metric-val">${inTok} in / ${outTok} out</span>
+            </div>
+            <span class="dot-separator">•</span>
+            <div class="metric-item">
+              <span>Cost:</span>
+              <span class="metric-val">$${cost.toFixed(6)}</span>
+            </div>
+            <span class="dot-separator">•</span>
+            <div class="metric-item">
+              <span>Latency:</span>
+              <span class="metric-val">${latency}ms</span>
+            </div>
+          </div>
+
+          <div class="trace-steps">
+            <div class="steps-label">Execution Trace</div>
+            ${stepsHtml}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    agentChainList.innerHTML = cardsHtml;
+
+    // Update aggregate summary
+    traceSummary.innerHTML = `
+      <span>${totalTokens} total tokens</span>
+      <span class="dot-separator">•</span>
+      <span>$${totalCost.toFixed(6)}</span>
+    `;
+  }
+
+  function escapeHtml(str) {
+    if (!str) return "";
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 });
