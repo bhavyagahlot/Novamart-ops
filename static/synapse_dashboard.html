@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synapse OS — Agent Telemetry & Control Plane</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:ital,wght@0,400;0,500;1,400&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    .synapse-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .synapse-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 18px 24px;
+    }
+    .synapse-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .synapse-pill {
+      background: #111111;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.04em;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    .stat-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .stat-value {
+      font-family: var(--font-mono);
+      font-size: 26px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .queue-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .queue-title {
+      font-family: var(--font-serif);
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .approval-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: var(--radius-md);
+      gap: 16px;
+    }
+    .approval-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .approval-desc {
+      font-size: 13.5px;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    .approval-sub {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: #92400e;
+    }
+    .approval-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-approve {
+      background: #166534;
+      color: #ffffff;
+      border: none;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-reject {
+      background: #991b1b;
+      color: #ffffff;
+      border: none;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-approve:hover, .btn-reject:hover {
+      opacity: 0.9;
+    }
+    .table-container {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .telemetry-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+    .telemetry-table th {
+      background: var(--bg-panel);
+      padding: 12px 16px;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-tertiary);
+      border-bottom: 1px solid var(--border-color);
+    }
+    .telemetry-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .telemetry-table tr:last-child td {
+      border-bottom: none;
+    }
+    .mono-cell {
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="synapse-container">
+    <!-- Topbar -->
+    <header class="synapse-topbar">
+      <div class="synapse-brand">
+        <div class="brand-badge">
+          <span class="brand-dot"></span>
+          <span class="brand-title">Synapse OS</span>
+        </div>
+        <span class="synapse-pill">CONTROL PLANE</span>
+        <span class="header-tag">Project: novamart-ops-proj-001</span>
+      </div>
+      <div>
+        <a href="/" class="synapse-link">
+          ← Return to NovaMart Store
+        </a>
+      </div>
+    </header>
+
+    <!-- Top KPI Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-label">Total Agent Runs</span>
+        <span class="stat-value" id="stat-total-runs">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Pending Approvals</span>
+        <span class="stat-value" id="stat-pending-approvals" style="color: #b45309;">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Total Token Spend</span>
+        <span class="stat-value" id="stat-total-cost">$0.000000</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">System Health</span>
+        <span class="stat-value" style="color: #166534; font-size: 20px;">99.98% OK</span>
+      </div>
+    </div>
+
+    <!-- Human-In-The-Loop Approval Queue -->
+    <section class="queue-card">
+      <div class="queue-title">
+        <span>⚡</span>
+        <span>Human-in-the-Loop Approval Queue</span>
+      </div>
+      <div id="approval-queue-list">
+        <div style="color: var(--text-tertiary); font-size: 13px;">No actions pending human approval.</div>
+      </div>
+    </section>
+
+    <!-- Live Telemetry Stream -->
+    <section class="queue-card">
+      <div class="queue-title">
+        <span>📊</span>
+        <span>Live Agent Telemetry & Trace Feed</span>
+      </div>
+      <div class="table-container">
+        <table class="telemetry-table">
+          <thead>
+            <tr>
+              <th>Run ID</th>
+              <th>Agent</th>
+              <th>Status</th>
+              <th>Tokens (In/Out)</th>
+              <th>Cost (USD)</th>
+              <th>Latency</th>
+              <th>Result Preview</th>
+            </tr>
+          </thead>
+          <tbody id="telemetry-rows">
+            <tr>
+              <td colspan="7" style="text-align: center; color: var(--text-tertiary);">Loading telemetry feed...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    async function loadSynapseData() {
+      try {
+        const res = await fetch("/api/v1/runs");
+        if (!res.ok) return;
+        const runs = await res.json();
+
+        // Update Stats
+        const totalRuns = runs.length;
+        const waitingRuns = runs.filter(r => r.status === "WAITING_APPROVAL");
+        const totalCost = runs.reduce((acc, r) => acc + (r.cost_usd || 0), 0);
+
+        document.getElementById("stat-total-runs").textContent = totalRuns;
+        document.getElementById("stat-pending-approvals").textContent = waitingRuns.length;
+        document.getElementById("stat-total-cost").textContent = "$" + totalCost.toFixed(6);
+
+        // Render Approval Queue
+        const queueContainer = document.getElementById("approval-queue-list");
+        if (waitingRuns.length === 0) {
+          queueContainer.innerHTML = '<div style="color: var(--text-tertiary); font-size: 13px;">✓ All automated policies satisfied. No decisions pending.</div>';
+        } else {
+          queueContainer.innerHTML = waitingRuns.map(run => `
+            <div class="approval-item" id="item-${run.id}">
+              <div class="approval-meta">
+                <div class="approval-desc"><strong>${run.agent_name}</strong>: ${escapeHtml(run.output_text)}</div>
+                <div class="approval-sub">Run ID: ${run.id} • Conversation: ${run.conversation_id} • Status: WAITING_APPROVAL</div>
+              </div>
+              <div class="approval-actions">
+                <button class="btn-approve" onclick="submitDecision('${run.id}', 'APPROVED')">✓ Approve</button>
+                <button class="btn-reject" onclick="submitDecision('${run.id}', 'REJECTED')">✕ Reject</button>
+              </div>
+            </div>
+          `).join("");
+        }
+
+        // Render Telemetry Table
+        const tableBody = document.getElementById("telemetry-rows");
+        if (runs.length === 0) {
+          tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-tertiary);">No runs logged yet.</td></tr>';
+        } else {
+          tableBody.innerHTML = runs.map(run => `
+            <tr>
+              <td class="mono-cell">${run.id.slice(0, 10)}...</td>
+              <td><strong>${escapeHtml(run.agent_name)}</strong></td>
+              <td><span class="chip chip-${run.status}">${run.status}</span></td>
+              <td class="mono-cell">${run.input_tokens} / ${run.output_tokens}</td>
+              <td class="mono-cell">$${(run.cost_usd || 0).toFixed(6)}</td>
+              <td class="mono-cell">${run.latency_ms}ms</td>
+              <td style="max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(run.output_text)}</td>
+            </tr>
+          `).join("");
+        }
+
+      } catch (err) {
+        console.error("Failed to load Synapse data:", err);
+      }
+    }
+
+    async function submitDecision(runId, decision) {
+      try {
+        const res = await fetch(`/api/v1/runs/${runId}/approval`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ decision: decision, note: `Human operator marked ${decision}` })
+        });
+        if (res.ok) {
+          loadSynapseData();
+        }
+      } catch (e) {
+        alert("Failed to submit approval: " + e);
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    loadSynapseData();
+    setInterval(loadSynapseData, 3000);
+  </script>
+</body>
+</html>

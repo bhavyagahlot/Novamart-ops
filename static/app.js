@@ -20,11 +20,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const synapseDashboardLink = document.getElementById("synapse-dashboard-link");
 
   // Fetch initial public configuration
+  let synapseUrl = "/synapse-dashboard";
+  if (synapseDashboardLink) {
+    synapseDashboardLink.href = "/synapse-dashboard";
+  }
+
   fetch("/api/config")
     .then(res => res.json())
     .then(config => {
-      if (config.synapse_url && synapseDashboardLink) {
-        synapseDashboardLink.href = config.synapse_url;
+      if (config.synapse_url && !config.synapse_url.includes("example.com")) {
+        synapseUrl = config.synapse_url.includes("localhost") ? "/synapse-dashboard" : config.synapse_url;
+      } else {
+        synapseUrl = "/synapse-dashboard";
+      }
+      if (synapseDashboardLink) {
+        synapseDashboardLink.href = synapseUrl;
       }
     })
     .catch(err => console.warn("Could not load public config:", err));

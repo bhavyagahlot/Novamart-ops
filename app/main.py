@@ -61,6 +61,66 @@ def serve_index():
         raise HTTPException(status_code=404, detail="Index file not found")
     return HTMLResponse(content=index_file.read_text(encoding="utf-8"))
 
+@app.get("/synapse-dashboard", response_class=HTMLResponse)
+def serve_synapse_dashboard():
+    dash_file = STATIC_DIR / "synapse_dashboard.html"
+    if not dash_file.exists():
+        raise HTTPException(status_code=404, detail="Dashboard file not found")
+    return HTMLResponse(content=dash_file.read_text(encoding="utf-8"))
+
+# ==========================================
+# Synapse Platform Simulation API Endpoints
+# ==========================================
+
+@app.get("/api/v1/runs")
+def list_synapse_runs(limit: int = 50):
+    from app.db import get_connection
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM agent_runs ORDER BY created_at DESC LIMIT ?", (limit,))
+    rows = cur.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+@app.post("/api/v1/runs")
+def synapse_create_run(payload: Dict[str, Any]):
+    return {"status": "ACKNOWLEDGED", "run_id": payload.get("run_id")}
+
+@app.post("/api/v1/runs/{run_id}/steps")
+def synapse_record_step(run_id: str, payload: Dict[str, Any]):
+    return {"status": "RECORDED", "run_id": run_id}
+
+@app.patch("/api/v1/runs/{run_id}")
+def synapse_update_run(run_id: str, payload: Dict[str, Any]):
+    return {"status": "UPDATED", "run_id": run_id}
+
+@app.get("/api/v1/runs/{run_id}/approval")
+def synapse_get_approval(run_id: str):
+    from app.db import get_connection
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT status FROM agent_runs WHERE id = ?", (run_id,))
+    row = cur.fetchone()
+    conn.close()
+    if row:
+        return {"run_id": run_id, "status": row["status"]}
+    return {"run_id": run_id, "status": "UNKNOWN"}
+
+class ApprovalDecisionRequest(BaseModel):
+    decision: str
+    note: Optional[str] = None
+
+@app.post("/api/v1/runs/{run_id}/approval")
+def synapse_post_approval(run_id: str, req: ApprovalDecisionRequest):
+    from app.db import get_connection
+    new_status = "COMPLETED" if req.decision.upper() == "APPROVED" else "REJECTED"
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE agent_runs SET status = ? WHERE id = ?", (new_status, run_id))
+    conn.commit()
+    conn.close()
+    return {"run_id": run_id, "status": new_status, "decision": req.decision}
+
 @app.get("/api/config")
 def get_public_config():
     return {
