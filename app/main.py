@@ -9,13 +9,22 @@ from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 
 from app.config import settings
-from app.db import init_db, get_products, get_agent_runs_by_conversation
+from app.db import (
+    init_db,
+    get_products,
+    get_agent_runs_by_conversation,
+    get_analytics_summary,
+    get_request_history,
+    update_approval_decision,
+    get_all_orders
+)
 from app.agents import (
     run_triage_agent,
     run_order_agent,
     run_pricing_agent,
     run_billing_agent
 )
+from app.agents.common import is_kill_switch_active, set_kill_switch
 from app.synapse_client import synapse_client
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -121,6 +130,83 @@ def synapse_post_approval(run_id: str, req: ApprovalDecisionRequest):
     conn.close()
     return {"run_id": run_id, "status": new_status, "decision": req.decision}
 
+@app.get("/api/analytics")
+def get_analytics():
+    """Returns real operational metrics aggregated from SQLite."""
+    return get_analytics_summary()
+
+@app.get("/api/history")
+def get_history(
+    search: Optional[str] = None,
+    status: Optional[str] = None,
+    agent: Optional[str] = None,
+    limit: int = 50
+):
+    """Returns conversation request history with search & filters."""
+    return get_request_history(search=search, status_filter=status, agent_filter=agent, limit=limit)
+
+@app.get("/api/orders")
+def list_orders(limit: int = 50):
+    """Returns recent customer orders."""
+    return get_all_orders(limit=limit)
+
+@app.get("/api/approvals")
+def list_pending_approvals():
+    """Returns all runs waiting for human manager authorization."""
+    from app.db import get_connection
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+    SELECT * FROM agent_runs 
+    WHERE status = 'WAITING_APPROVAL' 
+    ORDER BY created_at DESC
+    """)
+    rows = cur.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+class KillSwitchPayload(BaseModel):
+    active: bool
+
+@app.get("/api/killswitch")
+def get_killswitch_status():
+    return {"active": is_kill_switch_active()}
+
+@app.post("/api/killswitch")
+def set_killswitch_status(payload: KillSwitchPayload):
+    new_state = set_kill_switch(payload.active)
+    return {"active": new_state, "message": f"Kill switch is now {'ACTIVATED (emergency halt)' if new_state else 'DEACTIVATED (normal)'}"}
+
+class SettingsUpdatePayload(BaseModel):
+    refund_approval_limit: Optional[float] = None
+    discount_approval_limit_percent: Optional[float] = None
+    gemini_model: Optional[str] = None
+    synapse_url: Optional[str] = None
+
+@app.get("/api/settings")
+def get_settings():
+    return {
+        "refund_approval_limit": settings.REFUND_APPROVAL_LIMIT,
+        "discount_approval_limit_percent": settings.DISCOUNT_APPROVAL_LIMIT_PERCENT,
+        "gemini_model": settings.GEMINI_MODEL,
+        "synapse_url": settings.SYNAPSE_URL,
+        "synapse_project_id": settings.SYNAPSE_PROJECT_ID,
+        "kill_switch_active": is_kill_switch_active(),
+        "database_path": settings.DATABASE_PATH
+    }
+
+@app.post("/api/settings")
+def update_settings(payload: SettingsUpdatePayload):
+    if payload.refund_approval_limit is not None:
+        settings.REFUND_APPROVAL_LIMIT = payload.refund_approval_limit
+    if payload.discount_approval_limit_percent is not None:
+        settings.DISCOUNT_APPROVAL_LIMIT_PERCENT = payload.discount_approval_limit_percent
+    if payload.gemini_model is not None:
+        settings.GEMINI_MODEL = payload.gemini_model
+    if payload.synapse_url is not None:
+        settings.SYNAPSE_URL = payload.synapse_url
+    return {"status": "UPDATED", "settings": get_settings()}
+
 @app.get("/api/config")
 def get_public_config():
     return {
@@ -164,7 +250,11 @@ def handle_chat(req: ChatRequest):
     route = triage_result.get("route")
 
     # Step 2: Route or Execute Specialist Agent
-    if route == "policy_faq":
+    if route == "killswitch":
+        final_reply = triage_result.get("reply", "Automated operations halted by Emergency Kill Switch.")
+        requires_approval = False
+
+    elif route == "policy_faq":
         final_reply = triage_result.get("reply", "Here is our store policy.")
         requires_approval = False
 
@@ -188,12 +278,12 @@ def handle_chat(req: ChatRequest):
     elif route == "billing":
         billing_result, billing_run = run_billing_agent(customer, msg, conv_id)
         runs.append(billing_run)
-        final_reply = billing_result.get("reply", "Refund inquiry processed.")
+        final_reply = billing_result.get("reply", "Billing inquiry processed.")
         requires_approval = billing_result.get("requires_approval", False)
         if requires_approval:
             approval_notice = (
-                f"Refund Approval Required: Refund amount (${billing_result.get('amount', 0):,.2f}) "
-                f"exceeds the automated limit of ${billing_result.get('limit', 0):,.2f}."
+                f"Billing Approval Required: Disputed/refund amount (${billing_result.get('amount', 0):,.2f}) "
+                f"exceeds the automated ceiling limit of ${billing_result.get('limit', 0):,.2f}."
             )
 
     else:

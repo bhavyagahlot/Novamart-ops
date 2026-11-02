@@ -3,132 +3,804 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NovaMart Ops — Multi-Agent Customer Operations</title>
+  <title>NovaMart Ops — Multi-Agent AI Operations Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:ital,wght@0,400;0,500;1,400&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:ital,wght@0,400;0,500;1,400&family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
 </head>
-<body>
-  <!-- Header -->
-  <header class="app-header">
-    <div class="header-left">
-      <div class="brand-badge">
-        <span class="brand-dot"></span>
-        <span class="brand-title">NovaMart Ops</span>
-      </div>
-      <span class="header-tag">Autonomous Multi-Agent Retail System</span>
-    </div>
-    <div class="header-right">
-      <div class="header-meta">
-        <span class="meta-label">Monitored by</span>
-        <a id="synapse-dashboard-link" href="https://api.synapse.example.com" target="_blank" rel="noopener noreferrer" class="synapse-link">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-          Synapse Dashboard
-        </a>
-      </div>
-    </div>
-  </header>
-
-  <!-- Main Container -->
-  <main class="main-layout">
-    <!-- Left Column: Customer Console -->
-    <section class="panel console-panel">
-      <div class="panel-header">
-        <h1 class="panel-title">Customer Operations</h1>
-        <p class="panel-subtitle">Interact with NovaMart's automated customer service agents.</p>
-      </div>
-
-      <!-- Quick Test Buttons -->
-      <div class="quick-tests-container">
-        <div class="section-label">Quick Scenarios</div>
-        <div class="quick-buttons-grid">
-          <button type="button" class="btn-quick" data-text="Order a laptop">
-            <span class="quick-icon">💻</span>
-            <span>Order a laptop</span>
-          </button>
-          <button type="button" class="btn-quick" data-text="Ask for 30% off">
-            <span class="quick-icon">🏷️</span>
-            <span>Ask for 30% off</span>
-          </button>
-          <button type="button" class="btn-quick" data-text="Refund an expensive order">
-            <span class="quick-icon">💸</span>
-            <span>Refund an expensive order</span>
-          </button>
-          <button type="button" class="btn-quick" data-text="What is your return and warranty policy?">
-            <span class="quick-icon">📋</span>
-            <span>Ask a policy question</span>
-          </button>
+<body class="dark-theme">
+  <div class="app-shell">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-container">
+          <div class="brand-icon-wrapper">
+            <span class="brand-pulse"></span>
+            <svg class="brand-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+          </div>
+          <div class="brand-meta">
+            <span class="brand-name">NovaMart Ops</span>
+            <span class="brand-tag">Autonomous Multi-Agent</span>
+          </div>
         </div>
       </div>
 
-      <!-- Customer Input Form -->
-      <form id="chat-form" class="chat-form">
-        <div class="form-row">
-          <label for="customer-name" class="input-label">Customer Name</label>
-          <input type="text" id="customer-name" class="text-input" value="Alex Rivera" placeholder="e.g. Alex Rivera" required>
-        </div>
-
-        <div class="form-row">
-          <label for="customer-message" class="input-label">Customer Message</label>
-          <textarea id="customer-message" class="text-area" rows="3" placeholder="Type your order, refund, discount, or policy question..." required>Order a laptop</textarea>
-        </div>
-
-        <button type="submit" id="btn-submit" class="btn-primary">
-          <span class="btn-text">Send Message</span>
-          <span class="btn-spinner" style="display:none;"></span>
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Operations</div>
+        <button class="nav-item active" data-tab="overview">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          <span>Overview</span>
         </button>
-      </form>
 
-      <!-- Customer Reply Section -->
-      <div class="customer-reply-card" id="reply-container">
-        <div class="reply-header">
-          <div class="reply-title-row">
-            <span class="reply-icon">💬</span>
-            <span class="reply-title">Customer Reply</span>
+        <button class="nav-item" data-tab="customer-ops">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          <span>Customer Operations</span>
+        </button>
+
+        <button class="nav-item" data-tab="agent-network">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+          <span>Agent Network</span>
+        </button>
+
+        <button class="nav-item" data-tab="live-trace">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+          <span>Live Execution Trace</span>
+        </button>
+
+        <button class="nav-item" data-tab="request-history">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span>Request History</span>
+        </button>
+
+        <div class="nav-section-label">Governance & Monitoring</div>
+        <button class="nav-item" data-tab="synapse-monitor">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          <span>Synapse Monitoring</span>
+          <span class="badge-pending" id="sidebar-pending-badge" style="display:none;">0</span>
+        </button>
+
+        <button class="nav-item" data-tab="settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="system-health-card">
+          <div class="health-indicator">
+            <span class="status-dot-green"></span>
+            <span class="health-text">Synapse Telemetry Active</span>
           </div>
-          <span id="reply-time" class="mono-meta">Ready</span>
-        </div>
-
-        <!-- Approval Alert Banner -->
-        <div id="approval-banner" class="approval-alert" style="display:none;">
-          <div class="alert-icon">⚠️</div>
-          <div class="alert-body">
-            <div class="alert-title">WAITING FOR HUMAN APPROVAL</div>
-            <div id="approval-notice-text" class="alert-text"></div>
-          </div>
-        </div>
-
-        <div id="customer-reply-content" class="reply-body">
-          Welcome to NovaMart Ops! Select a quick-test scenario above or type a message to execute our autonomous agent workflows.
+          <div class="health-sub mono-text" id="sidebar-killswitch-status">Kill Switch: Normal</div>
         </div>
       </div>
-    </section>
+    </aside>
 
-    <!-- Right Column: Live Agent Trace & Synapse Monitor -->
-    <section class="panel trace-panel">
-      <div class="panel-header trace-header-row">
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+      
+      <!-- Top Application Header -->
+      <header class="top-header">
+        <div class="header-breadcrumbs">
+          <span class="breadcrumb-root">NovaMart Ops</span>
+          <span class="breadcrumb-separator">/</span>
+          <span class="breadcrumb-current" id="current-view-title">Overview Dashboard</span>
+        </div>
+
+        <div class="header-actions">
+          <div class="header-pill mono-text" id="live-clock">--:--:--</div>
+          <div class="header-pill status-pill">
+            <span class="status-dot-green"></span>
+            <span>4 Agents Active</span>
+          </div>
+          <a href="/synapse-dashboard" target="_blank" class="btn-synapse-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            <span>External Synapse OS</span>
+          </a>
+        </div>
+      </header>
+
+      <!-- Content Views -->
+      <main class="content-container">
+
+        <!-- ======================================================== -->
+        <!-- TAB 1: OVERVIEW DASHBOARD                                -->
+        <!-- ======================================================== -->
+        <section id="tab-overview" class="view-tab active">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Operations Overview</h1>
+              <p class="view-subtitle">Real-time aggregate performance metrics across all 4 customer agents.</p>
+            </div>
+            <button class="btn-secondary" id="btn-refresh-analytics">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+              <span>Refresh Metrics</span>
+            </button>
+          </div>
+
+          <!-- KPI Metric Cards Grid -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">Requests Processed</span>
+                <span class="kpi-icon">📥</span>
+              </div>
+              <div class="kpi-value" id="kpi-total-requests">0</div>
+              <div class="kpi-meta"><span class="mono-text" id="kpi-total-runs">0</span> total agent runs</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">Successful Executions</span>
+                <span class="kpi-icon text-success">✓</span>
+              </div>
+              <div class="kpi-value text-success" id="kpi-success-rate">0%</div>
+              <div class="kpi-meta"><span class="mono-text" id="kpi-successful-count">0</span> completed runs</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">Pending Approvals</span>
+                <span class="kpi-icon text-warning">⏳</span>
+              </div>
+              <div class="kpi-value text-warning" id="kpi-waiting-count">0</div>
+              <div class="kpi-meta">Requires human authorization</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">Failed / Disputed</span>
+                <span class="kpi-icon text-danger">✕</span>
+              </div>
+              <div class="kpi-value text-danger" id="kpi-failed-count">0</div>
+              <div class="kpi-meta">Errors or rejected actions</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">Tokens Consumed</span>
+                <span class="kpi-icon">⚡</span>
+              </div>
+              <div class="kpi-value mono-text" id="kpi-total-tokens">0</div>
+              <div class="kpi-meta"><span class="mono-text" id="kpi-token-split">0 in / 0 out</span></div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">Estimated AI Cost</span>
+                <span class="kpi-icon">💳</span>
+              </div>
+              <div class="kpi-value mono-text" id="kpi-total-cost">$0.000000</div>
+              <div class="kpi-meta">Gemini 1.5 Flash rates</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">Average Latency</span>
+                <span class="kpi-icon">⏱️</span>
+              </div>
+              <div class="kpi-value mono-text" id="kpi-avg-latency">0 ms</div>
+              <div class="kpi-meta">End-to-end execution speed</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">Active Agents</span>
+                <span class="kpi-icon">🤖</span>
+              </div>
+              <div class="kpi-value" id="kpi-active-agents">4 / 4</div>
+              <div class="kpi-meta">Triage, Order, Pricing, Billing</div>
+            </div>
+          </div>
+
+          <!-- Operational Visualizations Grid -->
+          <div class="charts-grid">
+            <div class="chart-card">
+              <div class="card-header">
+                <h3 class="card-title">Agent Execution Distribution</h3>
+                <span class="card-tag">Real SQLite Data</span>
+              </div>
+              <div class="chart-body" id="agent-distribution-chart">
+                <!-- Rendered dynamically via app.js -->
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="card-header">
+                <h3 class="card-title">Token Consumption by Agent</h3>
+                <span class="card-tag">Total In/Out Tokens</span>
+              </div>
+              <div class="chart-body" id="agent-tokens-chart">
+                <!-- Rendered dynamically via app.js -->
+              </div>
+            </div>
+
+            <div class="chart-card full-width">
+              <div class="card-header">
+                <h3 class="card-title">Recent Request Telemetry Timeline</h3>
+                <span class="card-tag">Execution Latency & Cost</span>
+              </div>
+              <div class="chart-body" id="recent-activity-chart">
+                <!-- Rendered dynamically via app.js -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- TAB 2: CUSTOMER OPERATIONS INTERFACE                     -->
+        <!-- ======================================================== -->
+        <section id="tab-customer-ops" class="view-tab">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Customer Operations</h1>
+              <p class="view-subtitle">Interactive customer portal backed by autonomous AI agents.</p>
+            </div>
+          </div>
+
+          <!-- Quick Test Scenarios -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <h3 class="card-title">Quick Test Scenarios</h3>
+              <span class="card-tag">One-click agent triggers</span>
+            </div>
+            <div class="quick-scenarios-grid">
+              <button class="scenario-btn" data-text="Order a laptop" data-name="Alex Rivera">
+                <span class="scenario-icon">💻</span>
+                <div class="scenario-meta">
+                  <span class="scenario-title">1. Order a laptop</span>
+                  <span class="scenario-desc">Checks inventory stock and creates order in SQLite</span>
+                </div>
+              </button>
+
+              <button class="scenario-btn" data-text="Can I get a 30% discount on my order?" data-name="Sam Chen">
+                <span class="scenario-icon">🏷️</span>
+                <div class="scenario-meta">
+                  <span class="scenario-title">2. Request 30% discount</span>
+                  <span class="scenario-desc">Exceeds 15% threshold; requires human approval</span>
+                </div>
+              </button>
+
+              <button class="scenario-btn" data-text="I need a refund for my expensive laptop order #1001" data-name="Alex Rivera">
+                <span class="scenario-icon">💸</span>
+                <div class="scenario-meta">
+                  <span class="scenario-title">3. Refund expensive order</span>
+                  <span class="scenario-desc">$1,299.99 > $100 ceiling; requires human approval</span>
+                </div>
+              </button>
+
+              <button class="scenario-btn" data-text="My invoice #1001 has an incorrect charge of $120 extra for warranty" data-name="Taylor Swift">
+                <span class="scenario-icon">🧾</span>
+                <div class="scenario-meta">
+                  <span class="scenario-title">4. Report incorrect invoice</span>
+                  <span class="scenario-desc">Audits invoice dispute; escalates overcharge > $50</span>
+                </div>
+              </button>
+
+              <button class="scenario-btn" data-text="Check order status for order #1001" data-name="Alex Rivera">
+                <span class="scenario-icon">📦</span>
+                <div class="scenario-meta">
+                  <span class="scenario-title">5. Check order status</span>
+                  <span class="scenario-desc">Retrieves real order delivery status & tracking code</span>
+                </div>
+              </button>
+
+              <button class="scenario-btn" data-text="What is your return and warranty policy?" data-name="Jordan Lee">
+                <span class="scenario-icon">📋</span>
+                <div class="scenario-meta">
+                  <span class="scenario-title">6. Ask company policy</span>
+                  <span class="scenario-desc">Triage agent answers directly without handoff</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Dual Column: Chat Terminal & Live Execution -->
+          <div class="ops-split-layout">
+            
+            <!-- Left: Customer Form & Response -->
+            <div class="ops-left-col">
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Customer Terminal</h3>
+                  <span class="card-tag">User Input</span>
+                </div>
+                
+                <form id="chat-form" class="customer-form">
+                  <div class="form-group">
+                    <label class="form-label" for="customer-name">Customer Name</label>
+                    <input type="text" id="customer-name" class="form-input" value="Alex Rivera" required>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="customer-message">Customer Message</label>
+                    <textarea id="customer-message" class="form-textarea" rows="3" placeholder="Type customer message or select a scenario above..." required>Order a laptop</textarea>
+                  </div>
+
+                  <button type="submit" id="btn-submit-chat" class="btn-primary">
+                    <span class="btn-icon">🚀</span>
+                    <span class="btn-text">Execute Multi-Agent Pipeline</span>
+                    <span class="btn-spinner" style="display:none;"></span>
+                  </button>
+                </form>
+
+                <!-- Customer Response Card -->
+                <div class="customer-reply-box" id="reply-box">
+                  <div class="reply-top">
+                    <div class="reply-badge">
+                      <span class="status-dot-blue"></span>
+                      <span>Customer Response</span>
+                    </div>
+                    <span id="reply-timestamp" class="mono-text">Ready</span>
+                  </div>
+
+                  <!-- Approval Alert Warning -->
+                  <div id="approval-alert-banner" class="approval-banner" style="display:none;">
+                    <div class="alert-icon">⚠️</div>
+                    <div class="alert-content">
+                      <div class="alert-heading">HUMAN APPROVAL REQUIRED</div>
+                      <div id="approval-alert-text" class="alert-body"></div>
+                    </div>
+                  </div>
+
+                  <div id="reply-text" class="reply-body-content">
+                    Ready to dispatch customer inquiries. Select any quick test scenario above or enter a custom prompt.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Real-Time Execution Sequence -->
+            <div class="ops-right-col">
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Agent Execution Sequence</h3>
+                  <div class="mono-text" id="ops-trace-meta">0 ms • 0 tokens • $0.000000</div>
+                </div>
+
+                <div id="ops-agent-sequence" class="sequence-list">
+                  <div class="empty-placeholder">
+                    <div class="empty-icon">⚡</div>
+                    <div class="empty-title">Awaiting Request Execution</div>
+                    <div class="empty-desc">Send a message to see the real-time agent handoff and step execution.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- TAB 3: AGENT NETWORK (TOPOLOGY VISUALIZATION)             -->
+        <!-- ======================================================== -->
+        <section id="tab-agent-network" class="view-tab">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Multi-Agent Network Topology</h1>
+              <p class="view-subtitle">Visual architectural map of the 4 autonomous agents and their interaction contracts.</p>
+            </div>
+            <div class="mono-text header-pill">Architecture: Hierarchical Handoff Model</div>
+          </div>
+
+          <div class="topology-container">
+            <!-- Triage Node (Root / Ingress) -->
+            <div class="topology-row root-row">
+              <div class="agent-node-card root-node active" id="node-triage">
+                <div class="node-header">
+                  <div class="node-icon">🧠</div>
+                  <div>
+                    <h3 class="node-title">Triage Agent</h3>
+                    <span class="node-role">Ingress & Intent Classifier</span>
+                  </div>
+                  <span class="chip chip-COMPLETED" id="chip-triage">READY</span>
+                </div>
+                <p class="node-desc">Reads incoming customer inquiries, extracts structured entities using Gemini 1.5, resolves policy FAQs directly, or routes to specialist agents.</p>
+                <div class="node-tags">
+                  <span class="node-tag">Gemini Flash</span>
+                  <span class="node-tag">Intent Classification</span>
+                  <span class="node-tag">Direct FAQ Resolver</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- SVG Connector Lines -->
+            <div class="topology-connectors">
+              <svg width="100%" height="60" viewBox="0 0 900 60" preserveAspectRatio="none">
+                <path d="M 450 0 L 450 25 L 150 25 L 150 60" stroke="#334155" stroke-width="2" fill="none" class="cable-path" id="cable-order"></path>
+                <path d="M 450 0 L 450 60" stroke="#334155" stroke-width="2" fill="none" class="cable-path" id="cable-pricing"></path>
+                <path d="M 450 0 L 450 25 L 750 25 L 750 60" stroke="#334155" stroke-width="2" fill="none" class="cable-path" id="cable-billing"></path>
+              </svg>
+            </div>
+
+            <!-- Specialist Agents Row -->
+            <div class="topology-row specialist-row">
+              <!-- Order Agent -->
+              <div class="agent-node-card" id="node-order">
+                <div class="node-header">
+                  <div class="node-icon">📦</div>
+                  <div>
+                    <h3 class="node-title">Order Agent</h3>
+                    <span class="node-role">Inventory & Fulfillment</span>
+                  </div>
+                  <span class="chip chip-COMPLETED" id="chip-order">IDLE</span>
+                </div>
+                <p class="node-desc">Queries SQLite product inventory, decrements stock upon purchase, creates confirmed orders, and tracks shipping courier telemetry.</p>
+                <div class="node-tags">
+                  <span class="node-tag">SQLite: products</span>
+                  <span class="node-tag">SQLite: orders</span>
+                  <span class="node-tag">Fulfillment</span>
+                </div>
+              </div>
+
+              <!-- Pricing Agent -->
+              <div class="agent-node-card" id="node-pricing">
+                <div class="node-header">
+                  <div class="node-icon">🏷️</div>
+                  <div>
+                    <h3 class="node-title">Pricing Agent</h3>
+                    <span class="node-role">Discounts & Business Policy</span>
+                  </div>
+                  <span class="chip chip-COMPLETED" id="chip-pricing">IDLE</span>
+                </div>
+                <p class="node-desc">Evaluates promo requests against corporate rules. Automatically approves discounts up to 15%. Escalates higher requests to human manager review.</p>
+                <div class="node-tags">
+                  <span class="node-tag">Max Auto: 15%</span>
+                  <span class="node-tag">Promo Coupons</span>
+                  <span class="node-tag">Policy Guardrail</span>
+                </div>
+              </div>
+
+              <!-- Billing Agent -->
+              <div class="agent-node-card" id="node-billing">
+                <div class="node-header">
+                  <div class="node-icon">💳</div>
+                  <div>
+                    <h3 class="node-title">Billing Agent</h3>
+                    <span class="node-role">Refunds & Invoice Audit</span>
+                  </div>
+                  <span class="chip chip-COMPLETED" id="chip-billing">IDLE</span>
+                </div>
+                <p class="node-desc">Assesses refund claims and audits invoice discrepancies. Instantly refunds amounts ≤ $100. Escalates refunds > $100 and invoice disputes > $50 to human review.</p>
+                <div class="node-tags">
+                  <span class="node-tag">Ceiling: $100</span>
+                  <span class="node-tag">SQLite: refunds</span>
+                  <span class="node-tag">Invoice Audit</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- TAB 4: LIVE AGENT EXECUTION TRACE                        -->
+        <!-- ======================================================== -->
+        <section id="tab-live-trace" class="view-tab">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Live Execution Trace</h1>
+              <p class="view-subtitle">Chronological micro-step timeline and telemetry for every agent operation.</p>
+            </div>
+            <div class="filter-controls">
+              <select id="filter-trace-agent" class="form-select">
+                <option value="ALL">All Agents</option>
+                <option value="Triage Agent">Triage Agent</option>
+                <option value="Order Agent">Order Agent</option>
+                <option value="Pricing Agent">Pricing Agent</option>
+                <option value="Billing Agent">Billing Agent</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="card">
+            <div id="full-trace-feed" class="trace-feed-list">
+              <!-- Rendered via app.js -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- TAB 5: REQUEST HISTORY                                   -->
+        <!-- ======================================================== -->
+        <section id="tab-request-history" class="view-tab">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Request History & Audit Log</h1>
+              <p class="view-subtitle">Full searchable log of all customer requests stored in SQLite.</p>
+            </div>
+          </div>
+
+          <!-- History Filter Bar -->
+          <div class="history-filter-bar">
+            <div class="search-input-wrapper">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" id="history-search-input" class="search-input" placeholder="Search by customer name, query, or conversation ID...">
+            </div>
+
+            <div class="filter-dropdowns">
+              <select id="history-status-filter" class="form-select">
+                <option value="ALL">All Statuses</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="WAITING_APPROVAL">Waiting Approval</option>
+                <option value="ERROR">Error / Rejected</option>
+              </select>
+
+              <select id="history-agent-filter" class="form-select">
+                <option value="ALL">All Agents</option>
+                <option value="Triage">Triage Agent</option>
+                <option value="Order">Order Agent</option>
+                <option value="Pricing">Pricing Agent</option>
+                <option value="Billing">Billing Agent</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- History Table -->
+          <div class="card p-0">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Conversation ID</th>
+                    <th>Customer</th>
+                    <th>User Query</th>
+                    <th>Agent Chain</th>
+                    <th>Status</th>
+                    <th>Tokens</th>
+                    <th>Cost</th>
+                    <th>Timestamp</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="history-table-body">
+                  <!-- Rendered via app.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- TAB 6: SYNAPSE MONITORING & GOVERNANCE                   -->
+        <!-- ======================================================== -->
+        <section id="tab-synapse-monitor" class="view-tab">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Synapse OS Monitoring & Governance</h1>
+              <p class="view-subtitle">External AI Agent observability, human-in-the-loop approvals, and kill switch controls.</p>
+            </div>
+            <div class="mono-text header-pill status-pill">
+              <span class="status-dot-green"></span>
+              <span>SDK: v1.0.0 Connected</span>
+            </div>
+          </div>
+
+          <!-- Synapse Connection & Kill Switch Card -->
+          <div class="grid-2-cols mb-4">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Synapse Platform Connection</h3>
+                <span class="badge-verified">INTEGRATED & VERIFIED</span>
+              </div>
+              <div class="synapse-details-grid">
+                <div class="detail-item">
+                  <span class="detail-label">Endpoint URL:</span>
+                  <span class="mono-text" id="synapse-target-url">http://localhost:8000</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Project ID:</span>
+                  <span class="mono-text" id="synapse-project-display">novamart-ops-proj-001</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Telemetry Status:</span>
+                  <span class="text-success font-semibold">Active Streaming (QUIC/HTTP2)</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Circuit Breaker:</span>
+                  <span class="text-success">Resilient Auto-Fallback Enabled</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Emergency Kill Switch Card -->
+            <div class="card" id="killswitch-card">
+              <div class="card-header">
+                <h3 class="card-title">Emergency Kill Switch</h3>
+                <span class="badge-verified">ACTIVE CONTROL</span>
+              </div>
+              <p class="card-desc mb-3">Instantly pauses all agent executions and locks automated fulfillment if anomalous agent behavior or security risks are detected.</p>
+              
+              <div class="killswitch-action-row">
+                <button id="btn-toggle-killswitch" class="btn-danger-outline">
+                  <span>🚨 Engage Emergency Kill Switch</span>
+                </button>
+                <div class="mono-text text-sm" id="killswitch-status-label">Status: Inactive (Normal)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Platform Capabilities Matrix -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <h3 class="card-title">Synapse OS Observability Matrix</h3>
+              <span class="card-tag">Capability Verification Audit</span>
+            </div>
+            <div class="capabilities-matrix-grid">
+              <div class="capability-item">
+                <div class="cap-header">
+                  <span class="cap-name">Real-Time Agent Telemetry</span>
+                  <span class="badge-verified">INTEGRATED & VERIFIED</span>
+                </div>
+                <p class="cap-desc">Lifecycle reporting (run start, micro-steps, token usage, cost, and latency metrics) via HTTP SDK.</p>
+              </div>
+
+              <div class="capability-item">
+                <div class="cap-header">
+                  <span class="cap-name">Human-In-The-Loop Approvals</span>
+                  <span class="badge-verified">INTEGRATED & VERIFIED</span>
+                </div>
+                <p class="cap-desc">Approval gating on large refunds (> $100), invoice disputes (> $50), and large discounts (> 15%).</p>
+              </div>
+
+              <div class="capability-item">
+                <div class="cap-header">
+                  <span class="cap-name">Inter-Agent Handoff Tracking</span>
+                  <span class="badge-verified">INTEGRATED & VERIFIED</span>
+                </div>
+                <p class="cap-desc">Chronological lineage tracking from Triage classification to downstream specialist execution.</p>
+              </div>
+
+              <div class="capability-item">
+                <div class="cap-header">
+                  <span class="cap-name">Emergency Kill Switch</span>
+                  <span class="badge-verified">INTEGRATED & VERIFIED</span>
+                </div>
+                <p class="cap-desc">Instant backend execution brake that pauses all automated agent fulfillment pipelines.</p>
+              </div>
+
+              <div class="capability-item">
+                <div class="cap-header">
+                  <span class="cap-name">Hallucination Detection Guardrails</span>
+                  <span class="badge-planned">PLATFORM CAPABILITY (STANDBY)</span>
+                </div>
+                <p class="cap-desc">Cross-references agent outputs against catalog ground truth. In current release, handled via structured SQLite schema checks.</p>
+              </div>
+
+              <div class="capability-item">
+                <div class="cap-header">
+                  <span class="cap-name">Autonomous Agent Self-Healing</span>
+                  <span class="badge-planned">PLATFORM CAPABILITY (STANDBY)</span>
+                </div>
+                <p class="cap-desc">Automated prompt mutation on retry. Standby status in current local deployment.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pending Human Approvals Queue -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Pending Human Approvals Queue</h3>
+              <span class="card-tag">Real-Time Authorization Queue</span>
+            </div>
+            <div id="synapse-approvals-queue" class="approvals-queue-container">
+              <!-- Rendered via app.js -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- TAB 7: SETTINGS & POLICIES                               -->
+        <!-- ======================================================== -->
+        <section id="tab-settings" class="view-tab">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Platform Settings & Policies</h1>
+              <p class="view-subtitle">Configure business rules, model selection, and Synapse platform endpoints.</p>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Business Policy Limits</h3>
+                <span class="card-tag">Approval Thresholds</span>
+              </div>
+              
+              <form id="settings-form" class="settings-form">
+                <div class="form-group">
+                  <label class="form-label" for="setting-refund-limit">Refund Approval Ceiling (USD $)</label>
+                  <p class="form-hint">Refunds exceeding this value automatically trigger WAITING_APPROVAL status for human supervisor review.</p>
+                  <input type="number" id="setting-refund-limit" class="form-input" value="100.0" step="5" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="setting-discount-limit">Maximum Auto-Discount Rate (%)</label>
+                  <p class="form-hint">Discount inquiries above this percentage will be denied automated promo coupons and held for manager review.</p>
+                  <input type="number" id="setting-discount-limit" class="form-input" value="15.0" step="1" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="setting-gemini-model">Gemini Foundation Model</label>
+                  <select id="setting-gemini-model" class="form-select">
+                    <option value="gemini-1.5-flash">gemini-1.5-flash (Fast, Low Latency, ~$0.075/1M in)</option>
+                    <option value="gemini-1.5-pro">gemini-1.5-pro (High Reasoning, Enterprise)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="setting-synapse-url">Synapse Platform Target URL</label>
+                  <input type="text" id="setting-synapse-url" class="form-input" value="http://localhost:8000" required>
+                </div>
+
+                <button type="submit" id="btn-save-settings" class="btn-primary">
+                  <span>Save Configuration</span>
+                </button>
+              </form>
+            </div>
+
+            <!-- Database & System Stats -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">System & Storage Environment</h3>
+                <span class="card-tag">SQLite Local Data</span>
+              </div>
+
+              <div class="system-stats-list">
+                <div class="stat-row">
+                  <span class="stat-name">Database Engine:</span>
+                  <span class="mono-text">SQLite 3 (WAL Mode)</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-name">Database File:</span>
+                  <span class="mono-text">novamart.db</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-name">Python Runtime:</span>
+                  <span class="mono-text">Python 3.13 / FastAPI</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-name">Active Catalog Products:</span>
+                  <span class="mono-text" id="settings-products-count">6 items in stock</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-name">Total Orders Recorded:</span>
+                  <span class="mono-text" id="settings-orders-count">Loading...</span>
+                </div>
+              </div>
+
+              <div class="catalog-preview-box mt-3">
+                <div class="catalog-preview-title">Product Catalog Inventory</div>
+                <div id="catalog-preview-items" class="catalog-items-grid">
+                  <!-- Rendered via app.js -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Conversation Detail Modal -->
+  <div id="conversation-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
         <div>
-          <h2 class="panel-title">Live Agent Trace</h2>
-          <p class="panel-subtitle">Multi-agent execution sequence & Synapse telemetry.</p>
+          <h3 class="modal-title" id="modal-conv-id">Conversation Trace</h3>
+          <span class="modal-subtitle mono-text" id="modal-conv-meta">Alex Rivera • 2 runs</span>
         </div>
-        <div class="trace-totals mono-meta" id="trace-summary">
-          <span>0 tokens</span>
-          <span class="dot-separator">•</span>
-          <span>$0.000000</span>
-        </div>
+        <button id="btn-close-modal" class="btn-close">✕</button>
       </div>
-
-      <!-- Agent Chain Container -->
-      <div id="agent-chain-list" class="agent-chain">
-        <div class="empty-trace-state">
-          <div class="empty-icon">⚡</div>
-          <div class="empty-title">Awaiting Execution</div>
-          <div class="empty-desc">Send a message or click a quick-test button to inspect agent triage, stock validation, and policy checks in real-time.</div>
-        </div>
+      <div class="modal-body" id="modal-trace-content">
+        <!-- Rendered via app.js -->
       </div>
-    </section>
-  </main>
+    </div>
+  </div>
 
   <script src="/static/app.js"></script>
 </body>

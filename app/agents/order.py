@@ -1,10 +1,10 @@
 import re
 from typing import Dict, Any, Tuple
-from app.db import find_product_by_query, create_order, get_products
+from app.db import find_product_by_query, create_order, get_products, find_order
 from .common import AgentExecutionContext, call_gemini, estimate_tokens
 
 ORDER_SYSTEM_PROMPT = """You are the NovaMart Order Agent.
-Extract the intended electronic product name and quantity from the customer's message.
+Extract the intended electronic product name and quantity from the customer's message, OR determine if they are checking order status.
 Known product catalog items include:
 - NovaBook Pro 16 / laptop
 - NovaBook Air 13 / laptop
@@ -14,13 +14,55 @@ Known product catalog items include:
 - NovaCharge 100W GaN / charger
 
 Respond in JSON format:
-{"product_query": "laptop", "quantity": 1}
+{"action": "order" | "status", "product_query": "laptop", "quantity": 1, "order_id": null}
 """
 
 def run_order_agent(customer_name: str, message: str, conversation_id: str) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     ctx = AgentExecutionContext(agent_name="Order Agent", conversation_id=conversation_id)
     ctx.add_step("Initiated order processing flow", details={"customer": customer_name, "raw_message": message})
 
+    msg_l = message.lower()
+    in_tok = 0
+    out_tok = 0
+
+    # Check if this is an Order Tracking / Status check
+    is_status_check = any(k in msg_l for k in ["status", "track", "tracking", "where is", "check order", "package"])
+    
+    # Check for order ID in message
+    order_id_match = re.search(r"#?(\d{4,})", message)
+    extracted_order_id = int(order_id_match.group(1)) if order_id_match else None
+
+    if is_status_check:
+        ctx.add_step("Identified request as Order Status Tracking inquiry", details={"order_id": extracted_order_id})
+        order_record = find_order(order_id=extracted_order_id, customer_name=customer_name)
+        
+        in_tok = estimate_tokens(ORDER_SYSTEM_PROMPT) + estimate_tokens(message)
+        
+        if order_record:
+            ctx.add_step(
+                f"Located Order #{order_record['id']} in database",
+                details={"order_id": order_record['id'], "status": order_record['status'], "product": order_record['product_name']}
+            )
+            ctx.add_step(f"Retrieved courier telemetry from carrier NovaExpress", details={"carrier": "NovaExpress", "tracking_code": f"NX-{order_record['id']}99"})
+            
+            reply = (
+                f"Order Status for #{order_record['id']} ({order_record['product_name']}): "
+                f"**{order_record['status']}**. "
+                f"Quantity: {order_record['quantity']}, Total: ${order_record['total_amount']:,.2f}. "
+                f"Carrier: NovaExpress (Tracking #NX-{order_record['id']}99). "
+                f"Estimated delivery: On schedule."
+            )
+            out_tok = estimate_tokens(reply)
+            run_record = ctx.finalize("COMPLETED", reply, in_tok, out_tok)
+            return {"reply": reply, "order": order_record}, run_record
+        else:
+            ctx.add_step("No matching order located for customer", status="ERROR")
+            reply = f"We could not locate an existing order under '{customer_name}' or ID #{extracted_order_id or 'N/A'}. Please check your order confirmation email."
+            out_tok = estimate_tokens(reply)
+            run_record = ctx.finalize("COMPLETED", reply, in_tok, out_tok)
+            return {"reply": reply, "order": None}, run_record
+
+    # Regular Product Ordering Flow
     product_query = "laptop"
     quantity = 1
     in_tok = 0

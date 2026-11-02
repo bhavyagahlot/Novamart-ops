@@ -12,6 +12,18 @@ logger = logging.getLogger("novamart.agents.common")
 PRICE_PER_INPUT_TOKEN = 0.075 / 1_000_000
 PRICE_PER_OUTPUT_TOKEN = 0.30 / 1_000_000
 
+# Global emergency kill switch
+_KILL_SWITCH_ACTIVE: bool = False
+
+def is_kill_switch_active() -> bool:
+    return _KILL_SWITCH_ACTIVE
+
+def set_kill_switch(active: bool) -> bool:
+    global _KILL_SWITCH_ACTIVE
+    _KILL_SWITCH_ACTIVE = active
+    logger.warning(f"Synapse Kill Switch set to {active}")
+    return _KILL_SWITCH_ACTIVE
+
 def calculate_cost(input_tokens: int, output_tokens: int) -> float:
     return round((input_tokens * PRICE_PER_INPUT_TOKEN) + (output_tokens * PRICE_PER_OUTPUT_TOKEN), 6)
 
