@@ -6,27 +6,36 @@ let currentConversationId = null;
 let activeTab = "overview";
 let killSwitchActive = false;
 
-document.addEventListener("DOMContentLoaded", () => {
-  // Navigation & UI Components
-  initClock();
-  initNavigation();
-  initCustomerOps();
-  initAgentNetwork();
-  initLiveTrace();
-  initRequestHistory();
-  initSynapseMonitoring();
-  initSettings();
+function bootApp() {
+  try { initClock(); } catch(e) { console.error("initClock error", e); }
+  try { initNavigation(); } catch(e) { console.error("initNavigation error", e); }
+  try { initCustomerOps(); } catch(e) { console.error("initCustomerOps error", e); }
+  try { initStoreCatalog(); } catch(e) { console.error("initStoreCatalog error", e); }
+  try { initAgentNetwork(); } catch(e) { console.error("initAgentNetwork error", e); }
+  try { initLiveTrace(); } catch(e) { console.error("initLiveTrace error", e); }
+  try { initRequestHistory(); } catch(e) { console.error("initRequestHistory error", e); }
+  try { initSynapseMonitoring(); } catch(e) { console.error("initSynapseMonitoring error", e); }
+  try { initSettings(); } catch(e) { console.error("initSettings error", e); }
 
-  // Load initial dashboard metrics
-  loadOverviewAnalytics();
-  checkKillSwitchStatus();
-});
+  // Load initial metrics, catalog, and settings immediately
+  try { loadOverviewAnalytics(); } catch(e) { console.error("loadOverviewAnalytics error", e); }
+  try { loadStoreCatalog(); } catch(e) { console.error("loadStoreCatalog error", e); }
+  try { loadSettingsView(); } catch(e) { console.error("loadSettingsView error", e); }
+  try { checkKillSwitchStatus(); } catch(e) { console.error("checkKillSwitchStatus error", e); }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bootApp);
+} else {
+  bootApp();
+}
 
 // ==============================================================================
 // 1. Clock & System Header
 // ==============================================================================
 function initClock() {
   const clockEl = document.getElementById("live-clock");
+  if (!clockEl) return;
   function tick() {
     const now = new Date();
     clockEl.textContent = now.toLocaleTimeString([], { hour12: false });
@@ -45,6 +54,7 @@ function initNavigation() {
 
   const titles = {
     "overview": "Overview Dashboard",
+    "catalog": "Electronics Store Catalog",
     "customer-ops": "Customer Operations Console",
     "agent-network": "Multi-Agent Topology Visualization",
     "live-trace": "Live Execution Trace",
@@ -76,6 +86,7 @@ function initNavigation() {
 
       // Refresh view-specific data
       if (targetTab === "overview") loadOverviewAnalytics();
+      if (targetTab === "catalog") loadStoreCatalog();
       if (targetTab === "live-trace") loadLiveTraceFeed();
       if (targetTab === "request-history") loadRequestHistory();
       if (targetTab === "synapse-monitor") loadSynapseApprovals();
@@ -96,22 +107,23 @@ async function loadOverviewAnalytics() {
     if (!res.ok) throw new Error("Could not fetch analytics");
     const data = await res.json();
 
-    // Populate KPIs
-    document.getElementById("kpi-total-requests").textContent = data.total_requests || 0;
-    document.getElementById("kpi-total-runs").textContent = data.total_runs || 0;
+    // Populate KPIs safely
+    const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setTxt("kpi-total-requests", data.total_requests || 0);
+    setTxt("kpi-total-runs", data.total_runs || 0);
     
     const successRate = data.total_runs > 0 ? Math.round((data.successful_executions / data.total_runs) * 100) : 100;
-    document.getElementById("kpi-success-rate").textContent = `${successRate}%`;
-    document.getElementById("kpi-successful-count").textContent = data.successful_executions || 0;
+    setTxt("kpi-success-rate", `${successRate}%`);
+    setTxt("kpi-successful-count", data.successful_executions || 0);
     
-    document.getElementById("kpi-waiting-count").textContent = data.waiting_approval || 0;
-    document.getElementById("kpi-failed-count").textContent = data.failed_executions || 0;
+    setTxt("kpi-waiting-count", data.waiting_approval || 0);
+    setTxt("kpi-failed-count", data.failed_executions || 0);
 
-    document.getElementById("kpi-total-tokens").textContent = (data.total_tokens || 0).toLocaleString();
-    document.getElementById("kpi-token-split").textContent = `${(data.input_tokens || 0).toLocaleString()} in / ${(data.output_tokens || 0).toLocaleString()} out`;
+    setTxt("kpi-total-tokens", (data.total_tokens || 0).toLocaleString());
+    setTxt("kpi-token-split", `${(data.input_tokens || 0).toLocaleString()} in / ${(data.output_tokens || 0).toLocaleString()} out`);
 
-    document.getElementById("kpi-total-cost").textContent = `$${(data.total_cost_usd || 0).toFixed(6)}`;
-    document.getElementById("kpi-avg-latency").textContent = `${Math.round(data.average_latency_ms || 0)} ms`;
+    setTxt("kpi-total-cost", `$${(data.total_cost_usd || 0).toFixed(6)}`);
+    setTxt("kpi-avg-latency", `${Math.round(data.average_latency_ms || 0)} ms`);
 
     // Update Pending approvals badge in sidebar
     const badge = document.getElementById("sidebar-pending-badge");
@@ -232,6 +244,236 @@ function renderRecentTimelineChart(recentRuns) {
       ${bars}
     </div>
   `;
+}
+
+// ==============================================================================
+// 3.5. Electronics Storefront & Product Catalog
+// ==============================================================================
+let cachedProducts = [];
+let currentCategoryFilter = "ALL";
+let currentSearchQuery = "";
+
+const PRODUCT_METADATA = {
+  1: {
+    icon: "💻",
+    desc: "16-inch Liquid Retina XDR display, M-Series silicon, 32GB Unified Memory, 1TB NVMe PCIe 4.0 SSD, MagSafe 3 fast charging.",
+    specs: ["16\" Liquid Retina", "32GB RAM", "1TB SSD", "M-Silicon", "Space Gray"]
+  },
+  2: {
+    icon: "💻",
+    desc: "Ultra-portable 1.2kg wedge chassis, 13.6-inch IPS True Tone, 16GB RAM, 512GB SSD, whisper-quiet fanless architecture, 18hr battery.",
+    specs: ["13.6\" IPS", "16GB RAM", "512GB SSD", "Fanless", "Midnight"]
+  },
+  3: {
+    icon: "📱",
+    desc: "6.8-inch AMOLED 120Hz LTPO display, 200MP quad-sensor camera array, Snapdragon 8 Gen 3, 5G Sub-6/mmWave, 5000mAh battery.",
+    specs: ["6.8\" AMOLED 120Hz", "200MP Quad Cam", "256GB Storage", "5G Sub-6", "Titanium"]
+  },
+  4: {
+    icon: "🎧",
+    desc: "Hybrid active noise canceling, 40mm custom beryllium drivers, spatial audio with head tracking, ultra-low latency wireless, 40hr playtime.",
+    specs: ["Active Noise Canceling", "40mm Beryllium", "Spatial Audio", "40hr Battery"]
+  },
+  5: {
+    icon: "⌚",
+    desc: "1.4-inch AMOLED display, sapphire crystal, optical bio-tracker (Heart Rate, ECG, SpO2), multi-band dual GPS, 5ATM water resistance.",
+    specs: ["1.4\" AMOLED", "ECG + SpO2", "Dual GPS", "5ATM Water", "4-Day Battery"]
+  },
+  6: {
+    icon: "⚡",
+    desc: "Compact 100W gallium nitride (GaN II) fast charger. 2x USB-C Power Delivery 3.0, 1x USB-A QC 4.0. Charges laptops & phones simultaneously.",
+    specs: ["100W GaN II", "2x USB-C + 1x USB-A", "PD 3.0 + QC 4.0", "Foldable Plug"]
+  }
+};
+
+function initStoreCatalog() {
+  const filterContainer = document.getElementById("catalog-category-filters");
+  const searchInput = document.getElementById("catalog-search-input");
+  const refreshBtn = document.getElementById("btn-refresh-catalog");
+
+  if (filterContainer) {
+    const pills = filterContainer.querySelectorAll(".filter-pill");
+    pills.forEach(pill => {
+      pill.addEventListener("click", () => {
+        pills.forEach(p => p.classList.remove("active"));
+        pill.classList.add("active");
+        currentCategoryFilter = pill.getAttribute("data-category") || "ALL";
+        renderStoreCatalog();
+      });
+    });
+  }
+
+  if (searchInput) {
+    let debounceTimer;
+    searchInput.addEventListener("input", (e) => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        currentSearchQuery = e.target.value.trim().toLowerCase();
+        renderStoreCatalog();
+      }, 250);
+    });
+  }
+
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", () => {
+      loadStoreCatalog();
+    });
+  }
+}
+
+async function loadStoreCatalog() {
+  const container = document.getElementById("store-catalog-grid");
+  const refreshBtn = document.getElementById("btn-refresh-catalog");
+  if (refreshBtn) refreshBtn.classList.add("loading");
+
+  try {
+    const res = await fetch("/api/products");
+    if (!res.ok) throw new Error("Failed to fetch product inventory");
+    cachedProducts = await res.json();
+    renderStoreCatalog();
+  } catch (err) {
+    console.error("Store catalog load error:", err);
+    if (container) {
+      container.innerHTML = `<div class="empty-placeholder"><div class="empty-desc" style="color: var(--danger);">Failed to load products from database. Please verify backend service.</div></div>`;
+    }
+  } finally {
+    if (refreshBtn) refreshBtn.classList.remove("loading");
+  }
+}
+
+function renderStoreCatalog() {
+  const container = document.getElementById("store-catalog-grid");
+  if (!container) return;
+
+  if (!cachedProducts || cachedProducts.length === 0) {
+    container.innerHTML = `<div class="empty-placeholder"><div class="empty-desc">No products found in SQLite database.</div></div>`;
+    return;
+  }
+
+  // Filter products by category and search query
+  const filtered = cachedProducts.filter(p => {
+    const matchCat = currentCategoryFilter === "ALL" || (p.category && p.category.toLowerCase() === currentCategoryFilter.toLowerCase());
+    const matchSearch = !currentSearchQuery || 
+      p.name.toLowerCase().includes(currentSearchQuery) || 
+      p.category.toLowerCase().includes(currentSearchQuery);
+    return matchCat && matchSearch;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty-placeholder" style="grid-column: 1 / -1;"><div class="empty-desc">No electronics match the current filter or search query.</div></div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(product => {
+    const meta = PRODUCT_METADATA[product.id] || {
+      icon: "⚡",
+      desc: `High-performance electronics product from NovaMart catalog. Guaranteed quality with 1-year warranty.`,
+      specs: ["1-Year Warranty", "Free 2-Day Shipping"]
+    };
+
+    let stockBadge = "";
+    let isOutOfStock = false;
+    if (product.stock > 10) {
+      stockBadge = `<span class="stock-pill stock-in">● In Stock (${product.stock} units)</span>`;
+    } else if (product.stock > 0) {
+      stockBadge = `<span class="stock-pill stock-low">⚠️ Low Stock (${product.stock} left)</span>`;
+    } else {
+      stockBadge = `<span class="stock-pill stock-out">✕ Sold Out</span>`;
+      isOutOfStock = true;
+    }
+
+    const specsHtml = meta.specs.map(s => `<span class="spec-chip">${escapeHtml(s)}</span>`).join("");
+
+    return `
+      <div class="product-store-card">
+        <div>
+          <div class="product-card-top">
+            <div class="product-icon-box">${meta.icon}</div>
+            <span class="product-category-badge">${escapeHtml(product.category)}</span>
+          </div>
+
+          <h3 class="product-name-title">${escapeHtml(product.name)}</h3>
+          <p class="product-desc-text">${escapeHtml(meta.desc)}</p>
+
+          <div class="product-specs-chips">
+            ${specsHtml}
+          </div>
+        </div>
+
+        <div>
+          <div class="product-price-stock-row">
+            <div>
+              <span style="font-size: 11px; color: var(--text-muted); display: block; text-transform: uppercase;">Direct Price</span>
+              <span class="product-price-val">$${product.price.toFixed(2)}</span>
+            </div>
+            ${stockBadge}
+          </div>
+
+          <div class="product-card-actions">
+            <button class="btn-primary" style="font-size: 12px; padding: 8px 10px; justify-content: center;" 
+              ${isOutOfStock ? 'disabled title="Out of stock"' : ''}
+              onclick="quickOrderProduct('${escapeHtml(product.name)}', ${product.price})">
+              <span>⚡ Order via AI</span>
+            </button>
+            <button class="btn-secondary" style="font-size: 12px; padding: 8px 10px; justify-content: center;"
+              onclick="quickDiscountProduct('${escapeHtml(product.name)}')">
+              <span>🏷️ Ask Discount</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function quickOrderProduct(productName, price) {
+  // Switch to Customer Operations tab
+  const opsTabBtn = document.querySelector('.nav-item[data-tab="customer-ops"]');
+  if (opsTabBtn) opsTabBtn.click();
+
+  // Populate form
+  const nameInput = document.getElementById("customer-name");
+  const messageInput = document.getElementById("customer-message");
+  const form = document.getElementById("chat-form");
+
+  if (nameInput && !nameInput.value.trim()) {
+    nameInput.value = "Alex Rivera";
+  }
+  if (messageInput) {
+    messageInput.value = `I want to order 1 ${productName}`;
+  }
+
+  // Submit form
+  if (form) {
+    setTimeout(() => {
+      form.dispatchEvent(new Event("submit"));
+    }, 150);
+  }
+}
+
+function quickDiscountProduct(productName) {
+  // Switch to Customer Operations tab
+  const opsTabBtn = document.querySelector('.nav-item[data-tab="customer-ops"]');
+  if (opsTabBtn) opsTabBtn.click();
+
+  // Populate form
+  const nameInput = document.getElementById("customer-name");
+  const messageInput = document.getElementById("customer-message");
+  const form = document.getElementById("chat-form");
+
+  if (nameInput && !nameInput.value.trim()) {
+    nameInput.value = "Alex Rivera";
+  }
+  if (messageInput) {
+    messageInput.value = `Can I get a 20% discount on the ${productName}?`;
+  }
+
+  // Submit form
+  if (form) {
+    setTimeout(() => {
+      form.dispatchEvent(new Event("submit"));
+    }, 150);
+  }
 }
 
 // ==============================================================================
@@ -763,40 +1005,53 @@ function initSynapseMonitoring() {
 async function loadSettingsView() {
   try {
     const res = await fetch("/api/settings");
-    if (!res.ok) return;
-    const cfg = await res.json();
+    if (res.ok) {
+      const cfg = await res.json();
+      const refEl = document.getElementById("setting-refund-limit");
+      if (refEl && cfg.refund_approval_limit != null) refEl.value = cfg.refund_approval_limit;
+      const discEl = document.getElementById("setting-discount-limit");
+      if (discEl && cfg.discount_approval_limit_percent != null) discEl.value = cfg.discount_approval_limit_percent;
+      const modelEl = document.getElementById("setting-gemini-model");
+      if (modelEl && cfg.gemini_model) modelEl.value = cfg.gemini_model;
+      const urlEl = document.getElementById("setting-synapse-url");
+      if (urlEl && cfg.synapse_url) urlEl.value = cfg.synapse_url;
+    }
+  } catch (err) {
+    console.error("Settings load error:", err);
+  }
 
-    document.getElementById("setting-refund-limit").value = cfg.refund_approval_limit;
-    document.getElementById("setting-discount-limit").value = cfg.discount_approval_limit_percent;
-    document.getElementById("setting-gemini-model").value = cfg.gemini_model;
-    document.getElementById("setting-synapse-url").value = cfg.synapse_url;
-
+  try {
     // Load Products Inventory Preview
     const prodRes = await fetch("/api/products");
     if (prodRes.ok) {
       const products = await prodRes.json();
-      document.getElementById("settings-products-count").textContent = `${products.length} products`;
+      const countEl = document.getElementById("settings-products-count");
+      if (countEl) countEl.textContent = `${products.length} products`;
       
       const prodGrid = document.getElementById("catalog-preview-items");
       if (prodGrid) {
         prodGrid.innerHTML = products.map(p => `
           <div class="catalog-item-chip">
-            <span style="font-weight: 500;">${p.name}</span>
+            <span style="font-weight: 500;">${escapeHtml(p.name)}</span>
             <span class="mono-text" style="color: var(--primary);">$${p.price.toFixed(2)} (Stock: ${p.stock})</span>
           </div>
         `).join("");
       }
     }
+  } catch (e) {
+    console.error("Catalog preview error:", e);
+  }
 
+  try {
     // Load Orders Count
     const orderRes = await fetch("/api/orders");
     if (orderRes.ok) {
       const orders = await orderRes.json();
-      document.getElementById("settings-orders-count").textContent = `${orders.length} orders in database`;
+      const orderCountEl = document.getElementById("settings-orders-count");
+      if (orderCountEl) orderCountEl.textContent = `${orders.length} orders in database`;
     }
-
-  } catch (err) {
-    console.error("Settings load error:", err);
+  } catch (e) {
+    console.error("Orders load error:", e);
   }
 }
 

@@ -8,6 +8,31 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:ital,wght@0,400;0,500;1,400&family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
+  <style>
+    /* Critical Base Layout Fallback */
+    :root {
+      --bg-base: #090d16;
+      --bg-sidebar: #0c1220;
+      --bg-surface: #0f172a;
+      --bg-card: #151f32;
+      --border-subtle: #1e293b;
+      --border-default: #253349;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --primary: #3b82f6;
+      --font-sans: 'Inter', -apple-system, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body.dark-theme { background-color: var(--bg-base); color: var(--text-primary); font-family: var(--font-sans); min-height: 100vh; }
+    .app-shell { display: flex; min-height: 100vh; }
+    .sidebar { width: 260px; background-color: var(--bg-sidebar); border-right: 1px solid var(--border-subtle); flex-shrink: 0; display: flex; flex-direction: column; }
+    .main-wrapper { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .top-header { height: 60px; background-color: var(--bg-sidebar); border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+    .content-container { flex: 1; padding: 28px; max-width: 1400px; width: 100%; margin: 0 auto; }
+    .view-tab { display: none !important; }
+    .view-tab.active { display: block !important; }
+  </style>
 </head>
 <body class="dark-theme">
   <div class="app-shell">
@@ -34,6 +59,11 @@
         <button class="nav-item active" data-tab="overview">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
           <span>Overview</span>
+        </button>
+
+        <button class="nav-item" data-tab="catalog">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+          <span>Store Catalog</span>
         </button>
 
         <button class="nav-item" data-tab="customer-ops">
@@ -227,6 +257,50 @@
               <div class="chart-body" id="recent-activity-chart">
                 <!-- Rendered dynamically via app.js -->
               </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- TAB 1.5: STOREFRONT & PRODUCT CATALOG                   -->
+        <!-- ======================================================== -->
+        <section id="tab-catalog" class="view-tab">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Electronics Store Catalog</h1>
+              <p class="view-subtitle">Live product inventory with specs, pricing, and 1-click autonomous AI agent purchasing.</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn-secondary" id="btn-refresh-catalog">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                <span>Refresh Inventory</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Catalog Toolbar & Filters -->
+          <div class="card mb-4" style="padding: 16px 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+              <div class="catalog-filter-bar" id="catalog-category-filters">
+                <button class="filter-pill active" data-category="ALL">All Electronics</button>
+                <button class="filter-pill" data-category="laptop">Laptops</button>
+                <button class="filter-pill" data-category="phone">Smartphones</button>
+                <button class="filter-pill" data-category="headphones">Audio</button>
+                <button class="filter-pill" data-category="smartwatch">Wearables</button>
+                <button class="filter-pill" data-category="accessory">Accessories</button>
+              </div>
+              <div style="min-width: 260px; flex: 1; max-width: 360px;">
+                <input type="text" id="catalog-search-input" class="form-input" placeholder="Search products, models, specs..." style="padding: 8px 14px; font-size: 13px;">
+              </div>
+            </div>
+          </div>
+
+          <!-- Products Grid -->
+          <div class="product-catalog-grid" id="store-catalog-grid">
+            <!-- Dynamically populated via app.js -->
+            <div class="empty-placeholder">
+              <div class="btn-spinner"></div>
+              <div class="empty-desc" style="margin-top: 8px;">Loading NovaMart live product catalog...</div>
             </div>
           </div>
         </section>
